@@ -1,0 +1,26 @@
+{
+  "dependencies": {
+    "mssql1": {
+      "type": "mssql",
+      "connectionId": "ConnectionStrings:DefaultConnection"
+    },
+    "mssql2": {
+      "type": "mssql",
+      "connectionId": "ConnectionStrings:Online_Food_PortalContextConnection"
+    },
+    "mssql3": {
+      "ignored": "true",
+      "type": "mssql",
+      "connectionId": "ConnectionStrings:IdentityContextConnection"
+    },
+    "mssql4": {
+      "ignored": "true",
+      "type": "mssql",
+      "connectionId": "ConnectionStrings:CustomIdentityContextConnection"
+    },
+    "mssql5": {
+      "type": "mssql",
+      "connectionId": "SqlDatabaseConnectionString"
+    }
+  }
+}

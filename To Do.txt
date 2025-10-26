@@ -1,0 +1,30 @@
+﻿7
+	Start files for order models, item models, and modification models
+8
+	Item and Modification Services
+9
+	Start files for models, controllers, and views
+10
+	Add to models, fill views with boilerplate, implement some controllers
+
+
+To Do
+	Create Files
+		All models - Complete
+		All controllers - Complete
+		All views
+	Create Boilerplate Code
+		All views
+	Some Implementation
+		Controllers
+			UserController - Created
+			KitchenController - Created
+			AdministrativeController - Created
+			HomeController - Created
+	Services
+		Items - Created
+		Modifications - Created
+
+Tests
+	Password Hashing - Complete
+	Password Verification - Complete
