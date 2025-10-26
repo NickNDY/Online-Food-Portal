@@ -20,6 +20,10 @@ namespace Online_Food_Portal.Services
         private readonly string connectionString;
         private readonly ISecretRepository secretRepository;
 
+        /// <summary>
+        /// Constructs the MySQL connection string using the injected secrets repository
+        /// </summary>
+        /// <param name="secretRepository">Injected secret repository</param>
         public UserService(ISecretRepository secretRepository)
         {
             this.secretRepository = secretRepository;
@@ -41,6 +45,11 @@ namespace Online_Food_Portal.Services
             System.Diagnostics.Debug.WriteLine($"Sql Connection String: {connectionString}");
         }
 
+        /// <summary>
+        /// Creates a user in the MySQL database
+        /// </summary>
+        /// <param name="username">The username of the created user</param>
+        /// <returns>The number of rows affected. 1 for success, 0 for failure</returns>
         public int CreateUser(string username)
         {
             string sqlStatement = $"INSERT INTO users (username) VALUES (@username)";
@@ -93,6 +102,11 @@ namespace Online_Food_Portal.Services
             throw new NotImplementedException();
         }
 
+        /// <summary>
+        /// Attempts to find a user by username
+        /// </summary>
+        /// <param name="username">The username to search for (case-insensitive)</param>
+        /// <returns>The UserModel of the located user if found, otherwise null</returns>
         public UserModel? GetUserByUsername(string username)
         {
             string sqlStatement = $"SELECT * FROM users WHERE LOWER(username) = LOWER(@username)";

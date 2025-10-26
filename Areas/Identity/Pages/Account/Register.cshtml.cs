@@ -146,11 +146,23 @@ namespace Online_Food_Portal.Areas.Identity.Pages.Account
                 user.UserName = Input.UserName;
                 user.Id = Input.UserName;
 
-                await _userStore.SetUserNameAsync(user, Input.UserName, CancellationToken.None);
-                await _emailStore.SetEmailAsync(user, Input.Email, CancellationToken.None);
-                var result = await _userManager.CreateAsync(user, Input.Password);
+                bool exists = false;
 
-                if (result.Succeeded)
+                IdentityUserModel userModel = await _userStore.FindByNameAsync(user.UserName.ToUpper(), CancellationToken.None);
+
+                exists = userModel != null;
+
+                IdentityResult? result;
+
+                if (!exists)
+                {
+                    await _userStore.SetUserNameAsync(user, Input.UserName, CancellationToken.None);
+                    await _emailStore.SetEmailAsync(user, Input.Email, CancellationToken.None);
+                    result = await _userManager.CreateAsync(user, Input.Password);
+                }
+                else result = IdentityResult.Failed(new IdentityError[] { new IdentityError { Code = "User Already Exists", Description = $"User with User Name '{userModel.UserName}' already exists" } });
+
+                if (!exists && result.Succeeded)
                 {
                     _logger.LogInformation("User created a new account with password.");
 
