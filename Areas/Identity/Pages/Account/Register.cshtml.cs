@@ -20,7 +20,6 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Logging;
 using Online_Food_Portal.Models;
-using Online_Food_Portal.Services;
 
 namespace Online_Food_Portal.Areas.Identity.Pages.Account
 {
@@ -32,7 +31,7 @@ namespace Online_Food_Portal.Areas.Identity.Pages.Account
         private readonly IUserEmailStore<IdentityUserModel> _emailStore;
         private readonly ILogger<RegisterModel> _logger;
         private readonly IEmailSender _emailSender;
-        private readonly IUserService _userService;
+        private readonly Interfaces.IAuthenticationService _userService;
 
 
 
@@ -42,7 +41,7 @@ namespace Online_Food_Portal.Areas.Identity.Pages.Account
             SignInManager<IdentityUserModel> signInManager,
             ILogger<RegisterModel> logger,
             IEmailSender emailSender,
-            IUserService userService)
+            Interfaces.IAuthenticationService userService)
         {
             _userManager = userManager;
             _userStore = userStore;

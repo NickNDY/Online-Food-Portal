@@ -1,0 +1,25 @@
+﻿<div>
+    @foreach (string result in ViewBag.results)
+    {
+        if (result.Length == 0)
+        {
+            <hr />
+        }
+        else if (result.StartsWith("--"))
+        {
+            <p style="color: purple">@result</p>
+        }
+        else if (result.Contains(": Failed"))
+        {
+            <p style="color: red">@result</p>
+        }
+        else if (result.Contains(": Passed"))
+        {
+            <p style="color: green">@result</p>
+        }
+        else
+        {
+            <p>@result</p>
+        }
+    }
+</div>

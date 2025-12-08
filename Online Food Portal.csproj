@@ -21,11 +21,13 @@
     </PackageReference>
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="8.0.7" />
     <PackageReference Include="MySqlConnector" Version="2.4.0" />
+    <PackageReference Include="Swashbuckle.AspNetCore.Newtonsoft" Version="10.0.1" />
   </ItemGroup>
 
   <ItemGroup>
     <Folder Include="Migrations\" />
     <Folder Include="Unit Tests\" />
+    <Folder Include="wwwroot\images\" />
   </ItemGroup>
 
 </Project>

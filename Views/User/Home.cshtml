@@ -1,1 +1,38 @@
-﻿<p>This is the home page for users!</p>
+﻿@model Online_Food_Portal.Models.StoreSettingsModel
+
+@{
+    ViewData["Title"] = "Home";
+    Layout = "~/Pages/Shared/_Layout.cshtml";
+
+    // String representation of store hours
+    string hoursString =
+        $"{(Model.open_time.Hours < 12 ? $"{Model.open_time}" : $"{Model.open_time.Add(TimeSpan.FromHours(-12))}")} {(Model.open_time.Hours < 12 ? "AM" : "PM")} to " +
+        $"{(Model.close_time .Hours < 12 ? $"{Model.close_time}" : $"{Model.close_time.Add(TimeSpan.FromHours(-12))}")} {(Model.close_time.Hours < 12 ? "AM" : "PM")}";
+
+    // Check for if today is a business day
+    bool orderingEnabledToday = Model.business_days[(int)DateTime.Now.DayOfWeek];
+
+    // Check for if now is during business hours
+    bool businessHoursActive = DateTime.Now.TimeOfDay >= Model.open_time && DateTime.Now.TimeOfDay < Model.close_time;
+
+    // String representation of whether ordering is available now
+    // Ordering must be enabled, today must be a business day, and now must be during business hours
+    string orderingEnabledString = Model.ordering_enabled && orderingEnabledToday && businessHoursActive ? "Available" : "Currently Unavailable";
+}
+
+<div>
+    <p>Store Hours:</p>
+    <p>@hoursString</p>
+    <hr />
+    <p>Store Business Days:</p>
+    @for (int i = 0; i < 7; i++)
+    {
+        string dayString = $"{(DayOfWeek)i}";
+        <h5>@dayString @if (Model.business_days[i]) { <span class="badge bg-success">Open</span> } @if (!Model.business_days[i]) { <span class="badge bg-danger">Closed</span> }</h5>
+    }
+    <hr />
+    <p>Ordering: @orderingEnabledString</p>
+    <hr />
+    <p>Store Address: @Model.store_address</p>
+    <p>Store Number: @Model.store_phone</p>
+</div>

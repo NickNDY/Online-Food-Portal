@@ -1,5 +1,60 @@
-﻿@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
+﻿@using Online_Food_Portal.Models
+@model IEnumerable<ItemDTO>
+
 @{
+    ViewData["Title"] = "Menu";
+    Layout = "~/Pages/Shared/_Layout.cshtml";
 }
+
+<h1>Menu</h1>
+
+<div class="d-flex flex-row flex-wrap">
+    @foreach (ItemDTO itemDTO in Model)
+    {
+        <div class="card" style="width: 18rem;">
+            <img src="@ViewBag.images[itemDTO.ItemModel.id]" runat="server" class="card-img-top" alt="..."></img>
+            <div class="card-body">
+                <h5 class="card-title">@($"{itemDTO.ItemModel.name}   ${itemDTO.DefaultPrice.ToString("0.00")}")</h5>
+                <p class="card-text">@itemDTO.ItemModel.description</p>
+                <button onclick="AddItemToOrder(@itemDTO.ItemModel.id);" class="btn btn-primary">Add</button>
+                <a href="/User/ItemModification?itemId=@itemDTO.ItemModel.id" class="btn btn-secondary">Modify</a>
+            </div>
+        </div>
+    }
+</div>
+
+<script>
+    async function AddItemToOrder(inputItemId)
+    {
+        let url = window.location.origin + '/api/User/AddItemToOrder';
+
+        const payload = { value: inputItemId };
+
+        const response = await fetch(url,
+        {
+            method: "POST",
+            credentials: 'same-origin',
+            body: JSON.stringify(payload),
+            headers: {
+                "Content-Type": "application/json",
+                "Host": window.location.host
+            }
+        });
+
+        if (!response.ok)
+        {
+            if (response.status == 404)
+                alert("Item Not Found To Add To Order");
+            else if (response.status == 400)
+                alert("Item Unavailable To Add To Order");
+            else
+            {
+                alert("Response: " + response.status + ", " + response.statusText);
+            }
+        }
+        else
+        {
+            alert("Item Successfully Added To Order");
+        }
+    }
+</script>

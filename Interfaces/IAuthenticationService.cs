@@ -1,8 +1,8 @@
 ﻿using Online_Food_Portal.Models;
 
-namespace Online_Food_Portal.Services
+namespace Online_Food_Portal.Interfaces
 {
-    public interface IUserService
+    public interface IAuthenticationService
     {
         // Create
         public int CreateUser(string username);

@@ -1,6 +1,28 @@
-﻿@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
+﻿@model IEnumerable<Online_Food_Portal.Models.OrderDTO>
+
 @{
+    ViewData["Title"] = "Home";
+    Layout = "~/Pages/Shared/_Layout.cshtml";
 }
-<p>This is the home page for kitchen staff!</p>
+
+<h1>Home</h1>
+
+<div>
+    @foreach (Online_Food_Portal.Models.OrderDTO orderDTO in Model)
+    {
+        <div class="card" style="width: 90%; margin-left: auto; margin-right: auto;">
+            <div class="card-body">
+                <h4 class="card-title">@orderDTO.order.id</h4>
+                @foreach (Online_Food_Portal.Models.OrderItemDTO orderItemDTO in orderDTO.items)
+                {
+                    <h5 class="card-title">@orderItemDTO.Display</h5>
+                    @foreach (Online_Food_Portal.Models.OrderModificationModel modificationModel in orderItemDTO.OrderModificationModels)
+                    {
+                        <p class="card-text">@modificationModel.modificationModel.name</p>
+                    }
+                }
+                <a href="#" class="btn btn-primary">Go somewhere</a>
+            </div>
+        </div>
+    }
+</div>

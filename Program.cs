@@ -3,6 +3,8 @@ using Microsoft.EntityFrameworkCore;
 using Online_Food_Portal.Data;
 using Online_Food_Portal.Services;
 using Online_Food_Portal.Models;
+using Online_Food_Portal.Interfaces;
+using Microsoft.AspNetCore.Authentication.Cookies;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -33,6 +35,8 @@ builder.Services.AddDefaultIdentity<IdentityUserModel>(options =>
     // Lockout settings
     options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(1);
     options.Lockout.MaxFailedAccessAttempts = 10;
+
+    
 })
 .AddRoles<IdentityRole>()
 .AddEntityFrameworkStores<CustomIdentityContext>();
@@ -49,15 +53,25 @@ builder.Services.ConfigureApplicationCookie(options =>
 
     options.LoginPath = "/Identity/Account/Login";
     options.AccessDeniedPath = "/Identity/Account/AccessDenied";
+
+    options.Cookie.Name = "FoodPortalAuthCookie";
+    options.Cookie.SameSite = SameSiteMode.Strict;
 });
 
 builder.Services.AddRazorPages();
+builder.Services.AddControllers();
 
 // Database services for direct injection
-builder.Services.AddScoped<IUserService, UserService>();
-builder.Services.AddScoped<IPasswordService, PasswordService>();
-builder.Services.AddScoped<IItemService, ItemService>();
-builder.Services.AddScoped<IModificationService, ModificationService>();
+builder.Services.AddScoped<IPasswordService, PasswordService>(); // Password hashing and verification
+builder.Services.AddScoped<ISqlConnectionStringBuilder, SqlConnectionStringBuilder>(); // Sql Connection string builder
+builder.Services.AddScoped<IAuthenticationService, AuthenticationService>(); // MySql user service
+builder.Services.AddScoped<IOrderService, OrderService>(); // Order service
+builder.Services.AddScoped<IItemService, ItemService>(); // Item service
+builder.Services.AddScoped<IModificationService, ModificationService>(); // Modification service
+builder.Services.AddScoped<IStoreSettingsService, StoreSettingsService>(); // Store settings service
+builder.Services.AddScoped<IKitchenService, KitchenService>(); // Kitchen Order Service
+builder.Services.AddScoped<IUserService, UserService>(); // User Order Service
+// Store settings service
 
 
 var app = builder.Build();
@@ -83,6 +97,7 @@ app.UseAuthentication(); // Enables authentication
 app.UseAuthorization(); // Enables authorization
 
 app.MapRazorPages(); // Map razor pages to controllers
+app.MapControllers(); // Map controllers
 
 app.MapControllerRoute( // Map default route for initial access
     name: "default",

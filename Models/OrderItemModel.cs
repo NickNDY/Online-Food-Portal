@@ -13,12 +13,15 @@
 
         public int items_id { get; set; }
 
-        public OrderItemModel(int id, int quantity, int orders_id, int items_id)
+        public ItemModel itemModel { get; set; }
+
+        public OrderItemModel(int id, int quantity, int orders_id, int items_id, ItemModel itemModel)
         {
             this.id = id;
             this.quantity = quantity;
             this.orders_id = orders_id;
             this.items_id = items_id;
+            this.itemModel = itemModel;
         }
     }
 }

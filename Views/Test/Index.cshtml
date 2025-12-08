@@ -1,0 +1,33 @@
+﻿
+@{
+    ViewData["Title"] = "Index";
+    Layout = "~/Pages/Shared/_Layout.cshtml";
+}
+
+<h1>Index</h1>
+
+<div>
+
+</div>
+
+<div id="testResults">
+    <button onclick="doTest('ItemService')">Item/ Modification</button>
+</div>
+
+<script>
+    async function doTest(testPath)
+    {
+        let url = window.location.hostname + "/" + testPath;
+
+        const response = await fetch(url);
+
+        if (!response.ok)
+        {
+            throw new Error('Error, Response: ' + response.status);
+        }
+
+        const result = await response.text();
+
+        document.getElementById("testResults").innerHTML = result;
+    }
+</script>

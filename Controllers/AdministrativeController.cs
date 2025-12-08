@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Online_Food_Portal.Interfaces;
 using Online_Food_Portal.Models;
 
 namespace Online_Food_Portal.Controllers
@@ -8,6 +9,17 @@ namespace Online_Food_Portal.Controllers
     [Authorize(Roles = "Administrator")]
     public class AdministrativeController : Controller
     {
+        private readonly IItemService itemService;
+        private readonly IModificationService modificationService;
+        private readonly IStoreSettingsService storeSettingsService;
+
+        public AdministrativeController(IItemService itemService, IStoreSettingsService storeSettingsService, IModificationService modificationService)
+        {
+            this.itemService = itemService;
+            this.storeSettingsService = storeSettingsService;
+            this.modificationService = modificationService;
+        }
+
         /// <summary>
         /// Menu Page for Administrators
         /// </summary>
@@ -15,7 +27,7 @@ namespace Online_Food_Portal.Controllers
         [Route("Home")]
         public IActionResult Home()
         {
-            return View();
+            return View(itemService.GetItems(false));
         }
 
         /// <summary>
@@ -27,7 +39,18 @@ namespace Online_Food_Portal.Controllers
         [HttpGet]
         public IActionResult ItemCreation(int itemId)
         {
-            return View();
+            if (itemId == -1)
+                return View();
+
+            ItemModel? itemModel = itemService.GetItem(itemId);
+            if (itemModel == null)
+                return View();
+
+            List<ModificationModel> modifications = modificationService.GetModificationsByItemId(itemId);
+
+            ItemDTO itemDTO = new ItemDTO(itemModel, modifications);
+
+            return View(itemDTO);
         }
 
         /// <summary>
@@ -39,8 +62,9 @@ namespace Online_Food_Portal.Controllers
         [HttpPost]
         public IActionResult ItemCreation(ItemModel itemModel)
         {
+
             // Process created item
-            return RedirectToAction("Home", "AdministrativeController");
+            return RedirectToAction("AdministrativeController", "Home");
         }
 
         /// <summary>
@@ -51,7 +75,20 @@ namespace Online_Food_Portal.Controllers
         [HttpGet]
         public IActionResult StoreSettings()
         {
-            return View();
+            return View(storeSettingsService.GetStoreSettings());
+        }
+
+        /// <summary>
+        /// Store Settings Update Post Page
+        /// </summary>
+        /// <param name="model">The Store Settings Model posted to the page</param>
+        /// <returns>Redirects to the Administrative home page</returns>
+        [Route("StoreSettings")]
+        [HttpPost]
+        public IActionResult StoreSettings(StoreSettingsModel model)
+        {
+            storeSettingsService.SetStoreSettings(model);
+            return RedirectToAction("AdministrativeController", "Home");
         }
     }
 }

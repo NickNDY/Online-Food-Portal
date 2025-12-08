@@ -1,4 +1,4 @@
-﻿namespace Online_Food_Portal.Services
+﻿namespace Online_Food_Portal.Interfaces
 {
     public interface ISecretRepository
     {

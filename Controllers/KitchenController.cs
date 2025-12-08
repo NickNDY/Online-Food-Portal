@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Online_Food_Portal.Interfaces;
+using Online_Food_Portal.Models;
 
 namespace Online_Food_Portal.Controllers
 {
@@ -7,6 +9,15 @@ namespace Online_Food_Portal.Controllers
     [Authorize(Roles = "Kitchen")]
     public class KitchenController : Controller
     {
+        private readonly IKitchenService kitchenService;
+        private readonly IOrderService orderService;
+
+        public KitchenController(IKitchenService kitchenService, IOrderService orderService)
+        {
+            this.kitchenService = kitchenService;
+            this.orderService = orderService;
+        }
+
         /// <summary>
         /// Orders In Progress Page
         /// </summary>
@@ -14,7 +25,7 @@ namespace Online_Food_Portal.Controllers
         [Route("Home")]
         public IActionResult Home()
         {
-            return View();
+            return View(kitchenService.GetIncompleteOrders());
         }
 
         /// <summary>
@@ -25,7 +36,12 @@ namespace Online_Food_Portal.Controllers
         [Route("OrderSelect")]
         public IActionResult OrderSelect(int orderId)
         {
-            return View();
+            OrderDTO? order = orderService.GetOrderDTO(orderId);
+
+            if (order == null)
+                return RedirectToAction("Home", "KitchenController");
+
+            return View(order);
         }
 
         /// <summary>
@@ -35,7 +51,7 @@ namespace Online_Food_Portal.Controllers
         [Route("PastOrders")]
         public IActionResult PastOrders()
         {
-            return View();
+            return View(kitchenService.GetCompleteOrders());
         }
     }
 }
