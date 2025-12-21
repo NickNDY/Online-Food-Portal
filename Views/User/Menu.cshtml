@@ -1,4 +1,5 @@
-﻿@using Online_Food_Portal.Models
+﻿@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@using Online_Food_Portal.Models
 @model IEnumerable<ItemDTO>
 
 @{
@@ -8,22 +9,77 @@
 
 <h1>Menu</h1>
 
-<div class="d-flex flex-row flex-wrap">
-    @foreach (ItemDTO itemDTO in Model)
-    {
-        <div class="card" style="width: 18rem;">
-            <img src="@ViewBag.images[itemDTO.ItemModel.id]" runat="server" class="card-img-top" alt="..."></img>
-            <div class="card-body">
-                <h5 class="card-title">@($"{itemDTO.ItemModel.name}   ${itemDTO.DefaultPrice.ToString("0.00")}")</h5>
-                <p class="card-text">@itemDTO.ItemModel.description</p>
-                <button onclick="AddItemToOrder(@itemDTO.ItemModel.id);" class="btn btn-primary">Add</button>
-                <a href="/User/ItemModification?itemId=@itemDTO.ItemModel.id" class="btn btn-secondary">Modify</a>
+<div class="d-flex flex-row">
+    <div class="d-flex flex-row flex-wrap" style="width: 75%; margin-right: auto; margin-left: 0px; padding-left: 0px;">
+        @foreach (ItemDTO itemDTO in Model)
+        {
+            <div class="card" style="width: 18rem;">
+                <img src="@itemDTO.ItemModel.image" runat="server" class="card-img-top" alt="..." asp-append-version="true" />
+                <div class="card-body">
+                    <h5 class="card-title">@($"{itemDTO.ItemModel.name}   ${itemDTO.DefaultPrice.ToString("0.00")}")</h5>
+                    <p class="card-text">@itemDTO.ItemModel.description</p>
+                    <button onclick="AddItemToOrder(@itemDTO.ItemModel.id);" class="btn btn-primary">Add</button>
+                    <a href="/User/ItemModification?itemId=@itemDTO.ItemModel.id" class="btn btn-secondary">Modify</a>
+                </div>
             </div>
-        </div>
-    }
+        }
+    </div>
+    <div id="cartPartial" style="width: 25%; margin: 0px; padding: 0px;">
+        <h4>Cart</h4>
+    </div>
 </div>
 
 <script>
+    window.addEventListener('load', (event) => {
+        RefreshPartialCart();
+    });
+
+    function RefreshPartialCart()
+    {
+        let url = window.location.origin + '/User/CartPartial';
+
+        fetch(url,
+        {
+            method: "GET",
+            credentials: 'same-origin',
+            headers: {
+                "Host": window.location.host
+            }
+        })
+        .then(response => {
+            if (response.ok)
+            {
+                return response.text();
+            }
+            else
+            {
+                const failBody = document.createElement("body");
+                const failElement = document.createElement("p")
+                failElement.textContent = "Failed to load cart";
+                failBody.appendChild(failElement);
+                return failBody;
+            }
+        })
+        .then(html => {
+            const element = document.getElementById("cartPartial");
+
+            if (element)
+            {
+                const oldElement = document.getElementById("partialCartElement");
+                if (oldElement)
+                {
+                    element.removeChild(oldElement);
+                }
+
+                const parser = new DOMParser();
+
+                const newElement = parser.parseFromString(html, "text/html");
+
+                element.appendChild(newElement.body.firstChild);
+            }
+        });
+    }
+
     async function AddItemToOrder(inputItemId)
     {
         let url = window.location.origin + '/api/User/AddItemToOrder';
@@ -54,7 +110,7 @@
         }
         else
         {
-            alert("Item Successfully Added To Order");
+            RefreshPartialCart();
         }
     }
 </script>

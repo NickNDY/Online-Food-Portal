@@ -1,74 +1,74 @@
-﻿using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Online_Food_Portal.Interfaces;
 using Online_Food_Portal.Models;
-using Online_Food_Portal.Services;
-
-// For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+using System.Net;
 
 namespace Online_Food_Portal.API
 {
     [Route("api/User")]
     [ApiController]
-    [Produces("application/json")]
-    public class UserAPI : ControllerBase
+    public class UserAPI(IItemService itemService, IOrderService orderService, IUserService userService) : ControllerBase
     {
-        private readonly IUserService userService;
-        private readonly IItemService itemService;
-        private readonly IAuthenticationService authService;
+        private readonly IItemService itemService = itemService;
+        private readonly IOrderService orderService = orderService;
+        private readonly IUserService userService = userService;
 
+        /// <summary>
+        /// For passing a single number value with JSON
+        /// </summary>
         public class SingleNumberModel
         {
             public int value { get; set; }
         }
 
-        public UserAPI(IUserService userService, IItemService itemService, IAuthenticationService authService)
+        /// <summary>
+        /// For passing a modified item with JSON
+        /// </summary>
+        public class ModifiedItemModel
         {
-            this.userService = userService;
-            this.itemService = itemService;
-            this.authService = authService;
+            public int id { get; set; }
+            public int orderItemId { get; set; }
+            public int quantity { get; set; }
+            public List<int> modifications { get; set; } = new List<int>();
         }
 
-        // GET: api/<UserAPI>
-        [HttpGet]
-        public IEnumerable<string> Get()
-        {
-            return new string[] { "value1", "value2" };
-        }
-
-        // GET api/<UserAPI>/5
-        [HttpGet("{AddItemToOrder}")]
-        public string Get([FromBody] int id)
-        {
-            return "id";
-        }
-
-        // POST api/<UserAPI>
-        [HttpPost("{AddItemToOrder}")]
-        public string AddItemToOrder([FromBody] SingleNumberModel item)
+        /// <summary>
+        /// Add single item to order by Item ID
+        /// </summary>
+        /// <param name="item">JSON object containing the Item ID as value</param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("AddItemToOrder")]
+        public HttpResponseMessage AddItemToOrder([FromBody] SingleNumberModel item)
         {
             UserModel? user;
             if (!GetUser(out user) || user == null)
-                return "Please Login";
+                return GenerateResponse(HttpStatusCode.Forbidden, "Please Login");
 
             System.Diagnostics.Debug.WriteLine($"Request to add item ID: {item.value} to order for user: {user.username}");
 
             ItemModel? itemModel = itemService.GetItem(item.value);
 
             if (itemModel == null)
-                return "Not Found";
+                return GenerateResponse(HttpStatusCode.NotFound, "Not Found");
 
-            if (userService.AddItemToOrder(user.id, item.value))
+            OrderModel order = orderService.GetCurrentOrder(user.id);
+
+            if (itemService.AddOrderItem(order.id, itemModel.id, 1, null, true) != -1)
             {
                 System.Diagnostics.Debug.WriteLine($"Successfully added order item ID: {item.value} to order for user: {user.username}");
-                return "Ok";
+                return GenerateResponse(HttpStatusCode.OK, "Success");
             }
             else
-                return "Request Failed";
+                return GenerateResponse(HttpStatusCode.BadRequest, "Bad Request");
         }
 
-        [HttpDelete("{RemoveItemFromOrder}")]
+        /// <summary>
+        /// Remove single item from order by Order Item ID
+        /// </summary>
+        /// <param name="item">JSON object containing the Order Item ID as value</param>
+        [HttpDelete]
+        [Route("RemoveItemFromOrder")]
         public void RemoveItemFromOrder([FromBody] SingleNumberModel item)
         {
             UserModel? user;
@@ -78,6 +78,49 @@ namespace Online_Food_Portal.API
             System.Diagnostics.Debug.WriteLine($"Request to remove order item ID: {item.value} from order for user: {user.username}");
 
             itemService.DeleteOrderItem(item.value);
+        }
+
+        /// <summary>
+        /// Add or update modified item to order
+        /// </summary>
+        /// <param name="item">JSON object containing the modified item</param>
+        /// <returns>Text message containing request results</returns>
+        [HttpPost]
+        [Route("AddModifiedItemToOrder")]
+        public HttpResponseMessage AddModifiedItemToOrder([FromBody] ModifiedItemModel item)
+        {
+            UserModel? user;
+            if (!GetUser(out user) || user == null)
+                return GenerateResponse(HttpStatusCode.Forbidden, "Please Login");
+
+            ItemModel? itemModel = itemService.GetItem(item.id);
+
+            if (itemModel == null)
+                return GenerateResponse(HttpStatusCode.NotFound, "Not Found");
+
+            OrderModel order = orderService.GetCurrentOrder(user.id);
+
+            if (item.orderItemId == -1) // Add item to order
+            {
+                if (itemService.AddOrderItem(order.id, item.id, item.quantity, item.modifications, false) != -1)
+                    return GenerateResponse(HttpStatusCode.OK, "Success");
+            }
+            else // Update item in order
+            {
+                if (itemService.UpdateOrderItem(item.orderItemId, item.quantity, item.modifications) == 1)
+                    return GenerateResponse(HttpStatusCode.OK, "Success");
+            }
+
+            return GenerateResponse(HttpStatusCode.BadRequest, "Bad Request");
+        }
+
+        private HttpResponseMessage GenerateResponse(HttpStatusCode code, string content)
+        {
+            HttpResponseMessage message = new HttpResponseMessage(code);
+
+            message.ReasonPhrase = content;
+
+            return message;
         }
 
         private bool GetUser(out UserModel? userModel)
@@ -91,7 +134,7 @@ namespace Online_Food_Portal.API
             if (username == null)
                 return false;
 
-            UserModel? user = authService.GetUserByUsername(username);
+            UserModel? user = userService.GetUserByUsername(username);
             if (user == null)
                 return false;
 

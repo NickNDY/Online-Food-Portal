@@ -32,5 +32,25 @@
             this.picked_up = picked_up;
             this.users_id = users_id;
         }
+
+        public override bool Equals(object? obj)
+        {
+            if (obj == null || !(obj is OrderModel)) return false;
+            
+            return Equals((OrderModel)obj);
+        }
+
+        public bool Equals(OrderModel other)
+        {
+            return
+                id == other.id &&
+                subtotal == other.subtotal &&
+                Math.Abs((date_placed - other.date_placed).TotalSeconds) <= 1.0 &&
+                submitted == other.submitted &&
+                cancelled == other.cancelled &&
+                completed == other.completed &&
+                picked_up == other.picked_up &&
+                users_id == other.users_id;
+        }
     }
 }

@@ -17,7 +17,7 @@ namespace Online_Food_Portal.Models
         public string name { get; set; }
 
         [DisplayName("Modification Description")]
-        [StringLength(64, ErrorMessage = "Modification Description must be no greater than 512 characters")]
+        [StringLength(512, ErrorMessage = "Modification Description must be no greater than 512 characters")]
         public string description { get; set; }
 
         [DisplayName("Modification Price")]
@@ -48,6 +48,26 @@ namespace Online_Food_Portal.Models
             this.defaultModification = defaultModification;
             this.hidden = hidden;
             this.items_id = items_id;
+        }
+
+        public override bool Equals(object? obj)
+        {
+            if (obj == null || !(obj is ModificationModel)) return false;
+            
+            return Equals((ModificationModel)obj);
+        }
+
+        public bool Equals(ModificationModel other)
+        {
+            return
+                id == other.id &&
+                String.Compare(name, other.name) == 0 &&
+                String.Compare(description, other.description) == 0 &&
+                price_offset == other.price_offset &&
+                stock == other.stock &&
+                defaultModification == other.defaultModification &&
+                hidden == other.hidden &&
+                items_id == other.items_id;
         }
     }
 }

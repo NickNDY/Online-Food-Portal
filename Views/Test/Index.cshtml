@@ -1,33 +1,79 @@
-﻿
-@{
-    ViewData["Title"] = "Index";
+﻿@{
+    ViewData["Title"] = "Component Test Index";
     Layout = "~/Pages/Shared/_Layout.cshtml";
 }
 
 <h1>Index</h1>
 
 <div>
-
+    <h2>Available Tests</h2>
+    <button onclick="doTest('ItemService')">Item/Modification CRUD</button>
+    <button onclick="doTest('OrderService')">Order CRUD</button>
+    <button onclick="doTest('PasswordService')">Password Encryption</button>
+    <button onclick="doTest('StoreService')">Store Settings RU</button>
+    <button onclick="doTest('UserService')">User CRD</button>
 </div>
 
-<div id="testResults">
-    <button onclick="doTest('ItemService')">Item/ Modification</button>
+<div id="testPartial">
 </div>
 
 <script>
     async function doTest(testPath)
     {
-        let url = window.location.hostname + "/" + testPath;
+        let url = window.location.hostname + "/Test/" + testPath;
 
         const response = await fetch(url);
 
         if (!response.ok)
         {
-            throw new Error('Error, Response: ' + response.status);
+            alert('Test Error, Response: ' + response.status);
         }
 
         const result = await response.text();
 
         document.getElementById("testResults").innerHTML = result;
+    }
+
+
+    async function doTest(testPath)
+    {
+        let url = window.location.origin + "/Test/" + testPath;
+
+        fetch(url,
+        {
+            method: "GET",
+            credentials: 'same-origin',
+            headers: {
+                "Host": window.location.host
+            }
+        })
+        .then(response => {
+            if (response.ok)
+            {
+                return response.text();
+            }
+            else
+            {
+                return "<p>Failed to load cart</p>";
+            }
+        })
+        .then(html => {
+            const element = document.getElementById("testPartial");
+
+            if (element)
+            {
+                const oldElement = document.getElementById("testResults");
+                if (oldElement)
+                {
+                    element.removeChild(oldElement);
+                }
+
+                const parser = new DOMParser();
+
+                const newElement = parser.parseFromString(html, "text/html");
+
+                element.appendChild(newElement.body.firstChild);
+            }
+        });
     }
 </script>

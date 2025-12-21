@@ -18,7 +18,7 @@ namespace Online_Food_Portal.Models
         public TimeSpan close_time { get; set; }
 
         [DisplayName("Store Business Days")]
-        public BitArray business_days { get; set; }
+        public bool[] business_days { get; set; }
 
         [DisplayName("Store Ordering Enabled")]
         public bool ordering_enabled { get; set; }
@@ -29,7 +29,7 @@ namespace Online_Food_Portal.Models
         [DisplayName("Store Phone Number")]
         public string store_phone { get; set; }
 
-        public StoreSettingsModel(TimeSpan open_time, TimeSpan close_time, BitArray business_days, bool ordering_enabled, string store_address, string store_phone)
+        public StoreSettingsModel(TimeSpan open_time, TimeSpan close_time, bool[] business_days, bool ordering_enabled, string store_address, string store_phone)
         {
             this.open_time = open_time;
             this.close_time = close_time;
@@ -37,6 +37,34 @@ namespace Online_Food_Portal.Models
             this.ordering_enabled = ordering_enabled;
             this.store_address = store_address;
             this.store_phone = store_phone;
+        }
+
+        public override bool Equals(object? obj)
+        {
+            if (obj == null || !(obj is StoreSettingsModel)) return false;
+
+            return Equals((StoreSettingsModel)obj);
+        }
+
+        public bool Equals(StoreSettingsModel other)
+        {
+            return
+                open_time == other.open_time &&
+                close_time == other.close_time &&
+                CompareBoolArray(business_days, other.business_days) &&
+                ordering_enabled == other.ordering_enabled &&
+                string.Compare(store_address, other.store_address) == 0 &&
+                string.Compare(store_phone, other.store_phone) == 0;
+        }
+
+        private bool CompareBoolArray(bool[] a, bool[] b)
+        {
+            if (a.Length != b.Length) return false;
+
+            for (int i = 0; i < a.Length; i++)
+                if (a[i] != b[i]) return false;
+
+            return true;
         }
     }
 }

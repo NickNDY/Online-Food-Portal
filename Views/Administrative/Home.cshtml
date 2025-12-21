@@ -1,1 +1,40 @@
-﻿<p>This is the home page for Administrators!</p>
+﻿@using Online_Food_Portal.Models
+@model IEnumerable<ItemModel>
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+
+@{
+    ViewData["Title"] = "Administrative Menu";
+    Layout = "~/Pages/Shared/_Layout.cshtml";
+}
+
+<div class="d-flex flex-row" style="margin-left: 0px; margin-right: 0px; width: 100%;">
+    <div class="d-flex flex-row flex-wrap" style="width: 100%; margin-left: 0px; margin-right: 0px;">
+        @foreach (ItemModel item in Model)
+        {
+            @if (!item.hidden)
+            {
+                <div class="card" style="width: 18rem;">
+                    <img src="@item.image" runat="server" class="card-img-top" alt="..." asp-append-version="true" />
+                    <div class="card-body">
+                        <h5 class="card-title">@item.name</h5>
+                        <p class="card-text">@item.description</p>
+                        <a href="/Administrative/ItemCreation/@item.id" class="btn btn-primary">Modify</a>
+                        <a href="/Administrative/ItemImage/@item.id" class="btn btn-secondary">Image</a>
+                    </div>
+                </div>
+            }
+            @if (item.hidden)
+            {
+                <div class="card" style="width: 18rem; background-color: dimgrey;">
+                    <img src="@item.image" runat="server" class="card-img-top" alt="..." asp-append-version="true" />
+                    <div class="card-body">
+                        <h5 class="card-title text-light">@item.name</h5>
+                        <p class="card-text text-light">@item.description</p>
+                        <a href="/Administrative/ItemCreation/@item.id" class="btn btn-primary text-light">Modify</a>
+                        <a href="/Administrative/ItemImage/@item.id" class="btn btn-light">Image</a>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+</div>

@@ -21,7 +21,5 @@ namespace Online_Food_Portal.Models
         [StringLength(64, ErrorMessage = "Last Name must be 1-64 characters", MinimumLength = 1)]
 		[PersonalData]
 		public string last_name { get; set; }
-
-
     }
 }

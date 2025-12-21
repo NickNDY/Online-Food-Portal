@@ -18,10 +18,6 @@ namespace Online_Food_Portal.Interfaces
 
         public int DeleteModification(int id);
 
-        public int DeleteModificationsByItemId(int items_id);
-
         public int DeleteOrderModification(int id);
-
-        public int DeleteAllOrderModificationsByOrderItemId(int order_items_id);
     }
 }

@@ -1,7 +1,6 @@
 ﻿using MySqlConnector;
 using Online_Food_Portal.Interfaces;
 using Online_Food_Portal.Models;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 namespace Online_Food_Portal.Services
 {
@@ -56,7 +55,7 @@ namespace Online_Food_Portal.Services
 
                         if (affectedRows != -1)
                         {
-                            sqlStatement = "SELECT LAST(id) FROM modifications";
+                            sqlStatement = "SELECT MAX(id) FROM modifications";
 
                             command = new MySqlCommand(sqlStatement, connection);
 
@@ -113,6 +112,7 @@ namespace Online_Food_Portal.Services
                         {
                             modificationModels.Add(ParseReaderToModificationModel(reader));
                         }
+                        reader.Close();
 
                         System.Diagnostics.Debug.WriteLine($"Selected modification{(modificationModels.Count != 1 ? "s" : "")}: {modificationModels.Count}");
 
@@ -140,7 +140,7 @@ namespace Online_Food_Portal.Services
         /// <returns></returns>
         public List<ModificationModel> GetModificationsByItemId(int items_id)
         {
-            string sqlStatement = "SELECT * FROM modifications WHERE items_id = @items_id";
+            string sqlStatement = $"SELECT * FROM modifications WHERE items_id = {items_id}";
 
             List<ModificationModel> modificationModels = new List<ModificationModel>();
 
@@ -156,14 +156,13 @@ namespace Online_Food_Portal.Services
 
                         MySqlCommand command = new MySqlCommand(sqlStatement, connection);
 
-                        command.Parameters.Add(new MySqlParameter("@items_id", MySqlDbType.Int32)).Value = items_id;
-
                         MySqlDataReader reader = command.ExecuteReader();
 
                         while (reader.Read())
                         {
                             modificationModels.Add(ParseReaderToModificationModel(reader));
                         }
+                        reader.Close();
 
                         System.Diagnostics.Debug.WriteLine($"Selected modification{(modificationModels.Count != 1 ? "s" : "")}: {modificationModels.Count}");
 
@@ -213,6 +212,7 @@ namespace Online_Food_Portal.Services
 
                         if (reader.Read())
                             modificationModel = ParseReaderToModificationModel(reader);
+                        reader.Close();
 
                         System.Diagnostics.Debug.WriteLine($"Found modification: {modificationModel != null}");
 
@@ -256,7 +256,7 @@ namespace Online_Food_Portal.Services
 
                     command.Parameters.Add(new MySqlParameter("@name", MySqlDbType.VarChar)).Value = modification.name;
                     command.Parameters.Add(new MySqlParameter("@description", MySqlDbType.VarChar)).Value = modification.description;
-                    command.Parameters.Add(new MySqlParameter("@price", MySqlDbType.Decimal)).Value = modification.price_offset;
+                    command.Parameters.Add(new MySqlParameter("@price_offset", MySqlDbType.Decimal)).Value = modification.price_offset;
                     command.Parameters.Add(new MySqlParameter("@stock", MySqlDbType.Int32)).Value = modification.stock;
                     command.Parameters.Add(new MySqlParameter("@defaultModification", MySqlDbType.Bool)).Value = modification.defaultModification;
                     command.Parameters.Add(new MySqlParameter("@hidden", MySqlDbType.Bool)).Value = modification.hidden;
@@ -280,7 +280,7 @@ namespace Online_Food_Portal.Services
 
         /// <summary>
         /// Deletes a modification
-        /// NOTE: For testing purposes only! Will fail if used on a production modification in an order
+        /// NOTE: For testing purposes only!
         /// </summary>
         /// <param name="id">The ID of the modification to delete</param>
         /// <returns>The number of affected rows. 1 = success, 0 = failure</returns>
@@ -319,46 +319,6 @@ namespace Online_Food_Portal.Services
         }
 
         /// <summary>
-        /// Deletes modifications for a specific item
-        /// NOTE: For testing purposes only! Will fail if used on a production item in an order
-        /// </summary>
-        /// <param name="items_id">The ID of the item to delete the modifications of</param>
-        /// <returns>The number of affected rows. 1+ = success, 0 = failure</returns>
-        public int DeleteModificationsByItemId(int items_id)
-        {
-            int affectedRows = 0;
-
-            string sqlStatement = $"DELETE FROM modifications WHERE items_id = @items_id";
-
-            try
-            {
-                using (MySqlConnection connection = new MySqlConnection(connectionString))
-                {
-                    connection.Open();
-
-                    System.Diagnostics.Debug.WriteLine("Connection to MySQL successful, deleting modifications");
-
-                    MySqlCommand command = new MySqlCommand(sqlStatement, connection);
-
-                    command.Parameters.Add(new MySqlParameter("@items_id", MySqlDbType.Int32)).Value = items_id;
-
-                    affectedRows = command.ExecuteNonQuery();
-
-                    System.Diagnostics.Debug.WriteLine($"Deleted modification: {(affectedRows > 0 ? "True" : "False")} ({affectedRows})");
-
-                    connection.Close();
-                    System.Diagnostics.Debug.WriteLine("Connection to MySQL closed");
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Failed to connect to SQL Database: {ex.Message}");
-            }
-
-            return affectedRows;
-        }
-
-        /// <summary>
         /// Adds a modification to an item in an order
         /// </summary>
         /// <param name="order_items_id">The ID of the order item to add the modification to</param>
@@ -367,8 +327,7 @@ namespace Online_Food_Portal.Services
         public int AddOrderModification(int order_items_id, int modifications_id)
         {
             string sqlStatement =
-                $"INSERT INTO order_modifications (order_items_id, modifications_id) " +
-                $"VALUES (@order_items_id, @modifications_id)";
+                $"INSERT INTO order_modifications (order_items_id, modifications_id) VALUES (@order_items_id, @modifications_id)";
 
             int affectedRows = 0;
 
@@ -432,43 +391,6 @@ namespace Online_Food_Portal.Services
                     affectedRows = command.ExecuteNonQuery();
 
                     System.Diagnostics.Debug.WriteLine($"Deleted modification: {(affectedRows == 1 ? "True" : "False")} ({affectedRows})");
-
-                    connection.Close();
-                    System.Diagnostics.Debug.WriteLine("Connection to MySQL closed");
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Failed to connect to SQL Database: {ex.Message}");
-            }
-
-            return affectedRows;
-        }
-
-        /// <summary>
-        /// Delete all modifications from an order item by order item ID
-        /// </summary>
-        /// <param name="order_items_id">The ID of the order item</param>
-        /// <returns>The number of rows affected. x > 0 for success, 0 for failure.</returns>
-        public int DeleteAllOrderModificationsByOrderItemId(int order_items_id)
-        {
-            int affectedRows = 0;
-
-            string sqlStatement = $"DELETE FROM order_modifications WHERE order_items_id = {order_items_id}";
-
-            try
-            {
-                using (MySqlConnection connection = new MySqlConnection(connectionString))
-                {
-                    connection.Open();
-
-                    System.Diagnostics.Debug.WriteLine("Connection to MySQL successful, deleting modifications");
-
-                    MySqlCommand command = new MySqlCommand(sqlStatement, connection);
-
-                    affectedRows = command.ExecuteNonQuery();
-
-                    System.Diagnostics.Debug.WriteLine($"Deleted modification: {(affectedRows > 0 ? "True" : "False")} ({affectedRows})");
 
                     connection.Close();
                     System.Diagnostics.Debug.WriteLine("Connection to MySQL closed");

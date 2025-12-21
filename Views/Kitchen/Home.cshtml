@@ -1,27 +1,26 @@
-﻿@model IEnumerable<Online_Food_Portal.Models.OrderDTO>
+﻿@using Online_Food_Portal.Models
+@model IEnumerable<OrderDTO>
 
 @{
-    ViewData["Title"] = "Home";
+    ViewData["Title"] = "Order View";
     Layout = "~/Pages/Shared/_Layout.cshtml";
 }
 
-<h1>Home</h1>
-
-<div>
-    @foreach (Online_Food_Portal.Models.OrderDTO orderDTO in Model)
+<div class="d-flex flex-column">
+    @foreach (OrderDTO orderDTO in Model)
     {
         <div class="card" style="width: 90%; margin-left: auto; margin-right: auto;">
             <div class="card-body">
                 <h4 class="card-title">@orderDTO.order.id</h4>
-                @foreach (Online_Food_Portal.Models.OrderItemDTO orderItemDTO in orderDTO.items)
+                @foreach (OrderItemDTO orderItemDTO in orderDTO.items)
                 {
                     <h5 class="card-title">@orderItemDTO.Display</h5>
-                    @foreach (Online_Food_Portal.Models.OrderModificationModel modificationModel in orderItemDTO.OrderModificationModels)
+                    @foreach (OrderModificationModel modificationModel in orderItemDTO.OrderModificationModels)
                     {
                         <p class="card-text">@modificationModel.modificationModel.name</p>
                     }
                 }
-                <a href="#" class="btn btn-primary">Go somewhere</a>
+                <a href="/Kitchen/OrderSelect/@orderDTO.order.id" class="btn btn-primary">Select</a>
             </div>
         </div>
     }

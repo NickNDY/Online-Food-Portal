@@ -1,5 +1,6 @@
 ﻿@using Online_Food_Portal.Models
 @model OrderItemDTO
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
 
 @{
     ViewData["Title"] = "ItemModification";
@@ -7,10 +8,87 @@
 }
 
 <h1>@Model.OrderItemModel.itemModel.name</h1>
-<asp:img src=ViewBag.image class="card-img-top" alt="..."></asp:img>
-<form>
+<img src="@Model.OrderItemModel.itemModel.image" style="width: 25%; height: 25%;" class="card-img-top" alt="..." asp-append-version="true" />
+<div class="d-flex flex-column">
     @foreach (OrderModificationModel modification in Model.OrderModificationModels)
     {
-        
+        if (!modification.modificationModel.hidden)
+        {
+            <label for="@modification.modificationModel.name">@($"{modification.modificationModel.name} ${modification.modificationModel.price_offset.ToString("0.00")}")</label>
+            <label class="switch">
+                @if (modification.setModification)
+                {
+                    <input class="modificationSwitch" id="@modification.modifications_id" type="checkbox" checked />
+                }
+                @if (!modification.setModification)
+                {
+                    <input class="modificationSwitch" id="@modification.modifications_id" type="checkbox" />
+                }
+                <span class="slider round"></span>
+            </label>
+        }
     }
-</form>
+    <label for="quantity">Quantity</label>
+    <input type="number" id="quantity" min="1" value="@Model.OrderItemModel.quantity" />
+</div>
+
+@if (Model.OrderItemModel.id == -1)
+{
+    <button onclick="modifyItem();" class="btn btn-primary">Add</button>
+}
+@if (Model.OrderItemModel.id > 0)
+{
+    <button onclick="modifyItem();" class="btn btn-primary">Update</button>
+}
+
+<script>
+    function modifyItem()
+    {
+        const url = window.location.origin + '/api/User/AddModifiedItemToOrder';
+
+        const checkBoxes = document.querySelectorAll(".modificationSwitch:checked");
+
+        let enabledModifications = [];
+
+        checkBoxes.forEach(checkBox => {
+            enabledModifications.push(checkBox.id);
+        });
+
+        const payload =
+        {
+            id: @Model.OrderItemModel.itemModel.id,
+            orderItemId: @Model.OrderItemModel.id,
+            quantity: document.getElementById("quantity").value,
+            modifications: enabledModifications
+        };
+
+        const response = fetch(url,
+        {
+            method: "POST",
+            credentials: 'same-origin',
+            body: JSON.stringify(payload),
+            headers: {
+                "Content-Type": "application/json",
+                "Host": window.location.host
+            }
+        })
+        .then(response => {
+            if (!response.ok)
+            {
+                if (response.status == 404)
+                    alert("Item Not Found To Add To Order");
+                else if (response.status == 400)
+                    alert("Item Unavailable To Add To Order");
+                else
+                {
+                    alert("Response: " + response.status + ", " + response.statusText);
+                }
+            }
+            else
+            {
+                window.location = window.location.origin + '/User/Menu';
+            }
+        });
+
+    }
+</script>

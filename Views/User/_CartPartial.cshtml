@@ -1,0 +1,19 @@
+﻿@using Online_Food_Portal.Models
+@model OrderDTO
+
+<div id="partialCartElement" style="width: 100%; margin-right: auto; margin-left: auto;">
+    <h5>Subtotal: $@Model.subtotal</h5>
+    @foreach (OrderItemDTO orderItem in Model.items)
+    {
+        <div class="d-inline-flex" style="width: 100%;">
+            <div class="d-inline-flex" style="width: 100%; height: 100%;">
+                <div>
+                    <h5>@(orderItem.Display)</h5>
+                </div>
+                <div style="margin-left: auto;">
+                    <h5>$@orderItem.Price</h5>
+                </div>
+            </div>
+        </div>
+    }
+</div>

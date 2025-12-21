@@ -22,9 +22,9 @@ namespace Online_Food_Portal.Areas.Identity.Pages.Account
     {
         private readonly SignInManager<IdentityUserModel> _signInManager;
         private readonly ILogger<LoginModel> _logger;
-        private readonly Interfaces.IAuthenticationService _userService;
+        private readonly Interfaces.IUserService _userService;
 
-        public LoginModel(SignInManager<IdentityUserModel> signInManager, ILogger<LoginModel> logger, Interfaces.IAuthenticationService userService)
+        public LoginModel(SignInManager<IdentityUserModel> signInManager, ILogger<LoginModel> logger, Interfaces.IUserService userService)
         {
             _signInManager = signInManager;
             _logger = logger;

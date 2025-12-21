@@ -1,19 +1,31 @@
-﻿<div>
-    @foreach (string result in ViewBag.results)
+﻿<div id="testResults">
+    @{int index = 0;}
+    @foreach(string result in ViewBag.results)
     {
-        if (result.Length == 0)
+        if (index == 0)
+        {
+            if (result.EndsWith("Pass"))
+            {
+                <h2 style="color: green">@result</h2>
+            }
+            else
+            {
+                <h2 style="color: red">@result</h2>
+            }
+        }
+        else if (result.Length == 0)
         {
             <hr />
         }
         else if (result.StartsWith("--"))
         {
-            <p style="color: purple">@result</p>
+            <h3 style="color: purple">@result</h3>
         }
-        else if (result.Contains(": Failed"))
+        else if (result.EndsWith("Fail"))
         {
             <p style="color: red">@result</p>
         }
-        else if (result.Contains(": Passed"))
+        else if (result.EndsWith("Pass"))
         {
             <p style="color: green">@result</p>
         }
@@ -21,5 +33,6 @@
         {
             <p>@result</p>
         }
+        index++;
     }
 </div>

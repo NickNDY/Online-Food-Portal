@@ -10,6 +10,8 @@ namespace Online_Food_Portal.Interfaces
 
         public List<OrderDTO> GetOrders();
 
+        public OrderModel? GetOrder(int orderId);
+
         public OrderDTO? GetOrderDTO(int id);
 
         public OrderItemDTO? GetOrderItem(int order_items_id);

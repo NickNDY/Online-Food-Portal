@@ -1,9 +1,6 @@
 ﻿using MySqlConnector;
 using Online_Food_Portal.Interfaces;
 using Online_Food_Portal.Models;
-using System.Data;
-using System.Text;
-using static NuGet.Packaging.PackagingConstants;
 
 namespace Online_Food_Portal.Services
 {
@@ -106,9 +103,11 @@ namespace Online_Food_Portal.Services
 
                     while (reader.Read())
                     {
+                        orders.Add(ParseReaderToOrderModel(reader));
 
                         System.Diagnostics.Debug.WriteLine($"Found order: {orders.Last().id}");
                     }
+                    reader.Close();
 
                     connection.Close();
                     System.Diagnostics.Debug.WriteLine("Connection to MySQL closed");
@@ -125,14 +124,9 @@ namespace Online_Food_Portal.Services
             return list;
         }
 
-        /// <summary>
-        /// Returns a specific order
-        /// </summary>
-        /// <param name="id">The specified order ID</param>
-        /// <returns>The requested order, or null if not found</returns>
-        public OrderDTO? GetOrderDTO(int id)
+        public OrderModel? GetOrder(int orderId)
         {
-            string sqlStatement = $"SELECT * FROM orders WHERE id = @id";
+            string sqlStatement = $"SELECT * FROM orders WHERE id = {orderId}";
 
             OrderModel? order = null;
 
@@ -142,16 +136,15 @@ namespace Online_Food_Portal.Services
                 {
                     connection.Open();
 
-                    System.Diagnostics.Debug.WriteLine("Connection to MySQL successful, retrieving order for DTO");
+                    System.Diagnostics.Debug.WriteLine("Connection to MySQL successful, retrieving order");
 
                     MySqlCommand command = new MySqlCommand(sqlStatement, connection);
-
-                    command.Parameters.Add(new MySqlParameter("@id", MySqlDbType.Int32)).Value = id;
 
                     MySqlDataReader reader = command.ExecuteReader();
 
                     if (reader.Read())
                         order = ParseReaderToOrderModel(reader);
+                    reader.Close();
 
                     System.Diagnostics.Debug.WriteLine($"Found order: {order != null}");
 
@@ -163,6 +156,18 @@ namespace Online_Food_Portal.Services
             {
                 System.Diagnostics.Debug.WriteLine($"Failed to connect to SQL Database: {ex.Message}");
             }
+
+            return order;
+        }
+
+        /// <summary>
+        /// Returns a specific order
+        /// </summary>
+        /// <param name="id">The specified order ID</param>
+        /// <returns>The requested order, or null if not found</returns>
+        public OrderDTO? GetOrderDTO(int id)
+        {
+            OrderModel? order = GetOrder(id);
 
             return order != null ? GetOrderDTO(order) : null;
         }
@@ -209,6 +214,7 @@ namespace Online_Food_Portal.Services
                     {
                         orderItemModels.Add(ParseReaderToOrderItemModel(reader));
                     }
+                    reader.Close();
 
                     connection.Close();
                     System.Diagnostics.Debug.WriteLine("Connection to MySQL closed");
@@ -257,6 +263,7 @@ namespace Online_Food_Portal.Services
 
                     if (reader.Read())
                         orderItemModel = ParseReaderToOrderItemModel(reader);
+                    reader.Close();
 
                     connection.Close();
                     System.Diagnostics.Debug.WriteLine("Connection to MySQL closed");
@@ -281,7 +288,7 @@ namespace Online_Food_Portal.Services
 
             string sqlStatement =
                 "SELECT * FROM order_modifications " +
-                $"LEFT JOIN modifications ON order_modifications.modifications_id = modifications.id" +
+                $"LEFT JOIN modifications ON order_modifications.modifications_id = modifications.id " +
                 $"WHERE order_items_id = {order_items_id}";
 
             try
@@ -302,6 +309,7 @@ namespace Online_Food_Portal.Services
                         orderModificationModel.setModification = true;
                         orderModificationModels.Add(orderModificationModel);
                     }
+                    reader.Close();
 
                     connection.Close();
                     System.Diagnostics.Debug.WriteLine("Connection to MySQL closed");
@@ -344,6 +352,7 @@ namespace Online_Food_Portal.Services
 
                     if (reader.Read())
                         order = ParseReaderToOrderModel(reader);
+                    reader.Close();
 
                     System.Diagnostics.Debug.WriteLine($"Found order: {order != null}");
 
@@ -368,17 +377,119 @@ namespace Online_Food_Portal.Services
 
         public List<OrderModel> GetOrdersByUserId(int users_id)
         {
-            throw new NotImplementedException();
+            string sqlStatement = $"SELECT * FROM orders WHERE users_id = {users_id}";
+
+            List<OrderModel> orders = new List<OrderModel>();
+
+            try
+            {
+                using (MySqlConnection connection = new MySqlConnection(connectionString))
+                {
+                    connection.Open();
+
+                    System.Diagnostics.Debug.WriteLine("Connection to MySQL successful, retrieving orders");
+
+                    MySqlCommand command = new MySqlCommand(sqlStatement, connection);
+
+                    MySqlDataReader reader = command.ExecuteReader();
+
+
+                    while (reader.Read())
+                    {
+                        orders.Add(ParseReaderToOrderModel(reader));
+
+                        System.Diagnostics.Debug.WriteLine($"Found order: {orders.Last().id}");
+                    }
+                    reader.Close();
+
+                    connection.Close();
+                    System.Diagnostics.Debug.WriteLine("Connection to MySQL closed");
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Failed to connect to SQL Database: {ex.Message}");
+            }
+
+            return orders;
         }
 
         public int UpdateOrder(OrderModel orderModel)
         {
-            throw new NotImplementedException();
+            OrderDTO? orderDTO = GetOrderDTO(orderModel.id);
+
+            if (orderDTO == null) return 0;
+
+            string sqlStatement =
+                    "UPDATE orders SET " +
+                    $"subtotal = {orderModel.subtotal}, " +
+                    $"date_placed = @date_placed, " +
+                    $"submitted = {(orderModel.submitted ? "1" : "0")}, " +
+                    $"cancelled = {(orderModel.cancelled ? "1" : "0")}, " +
+                    $"completed = {(orderModel.completed ? "1" : "0")}, " +
+                    $"picked_up = {(orderModel.picked_up ? "1" : "0")} " +
+                    $"WHERE id = {orderModel.id}";
+
+            int affectedRows = 0;
+
+            try
+            {
+                using (MySqlConnection connection = new MySqlConnection(connectionString))
+                {
+                    connection.Open();
+
+                    System.Diagnostics.Debug.WriteLine("Connection to MySQL successful, updating order");
+
+                    MySqlCommand command = new MySqlCommand(sqlStatement, connection);
+
+                    command.Parameters.Add(new MySqlParameter("@date_placed", MySqlDbType.DateTime)).Value = orderModel.date_placed.AddMilliseconds(-orderModel.date_placed.Millisecond);
+
+                    affectedRows = command.ExecuteNonQuery();
+
+                    System.Diagnostics.Debug.WriteLine($"Updated order: {(affectedRows == 1 ? "True" : "False")}");
+
+                    connection.Close();
+                    System.Diagnostics.Debug.WriteLine("Connection to MySQL closed");
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Failed to connect to SQL Database: {ex.Message}");
+            }
+
+            return affectedRows;
         }
 
         public int DeleteOrder(int id)
         {
-            throw new NotImplementedException();
+            string sqlStatement = $"DELETE FROM orders WHERE id = {id}";
+
+            int affectedRows = 0;
+
+            try
+            {
+                using (MySqlConnection connection = new MySqlConnection(connectionString))
+                {
+                    connection.Open();
+
+                    System.Diagnostics.Debug.WriteLine("Connection to MySQL successful, deleting order");
+
+                    MySqlCommand command = new MySqlCommand(sqlStatement, connection);
+
+                    affectedRows = command.ExecuteNonQuery();
+
+                    System.Diagnostics.Debug.WriteLine($"Deleted order: {(affectedRows == 1 ? "True" : "False")}");
+
+                    connection.Close();
+                    System.Diagnostics.Debug.WriteLine("Connection to MySQL closed");
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Failed to connect to SQL Database: {ex.Message}");
+            }
+
+            return affectedRows;
         }
 
         private static OrderModel ParseReaderToOrderModel(MySqlDataReader reader)
@@ -416,6 +527,7 @@ namespace Online_Food_Portal.Services
                 reader.GetInt32(0),
                 reader.GetInt32(1),
                 reader.GetInt32(2),
+                false,
                 new ModificationModel(
                     reader.GetInt32(3),
                     reader.GetString(4),

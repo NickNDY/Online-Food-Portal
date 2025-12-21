@@ -33,7 +33,7 @@ namespace Online_Food_Portal.Controllers
         /// </summary>
         /// <param name="orderId"></param>
         /// <returns>The view for a selected order</returns>
-        [Route("OrderSelect")]
+        [Route("OrderSelect/{orderId}")]
         public IActionResult OrderSelect(int orderId)
         {
             OrderDTO? order = orderService.GetOrderDTO(orderId);
@@ -51,7 +51,31 @@ namespace Online_Food_Portal.Controllers
         [Route("PastOrders")]
         public IActionResult PastOrders()
         {
-            return View(kitchenService.GetCompleteOrders());
+            return View("Home", kitchenService.GetCompleteOrders());
+        }
+
+        [Route("CompleteOrder/{orderId}")]
+        public IActionResult CompleteOrderToggle(int orderId)
+        {
+            kitchenService.CompleteOrder(orderId);
+
+            return RedirectToAction("Home", "Kitchen");
+        }
+
+        [Route("PickupOrder/{orderId}")]
+        public IActionResult PickupOrderToggle(int orderId)
+        {
+            kitchenService.PickupOrder(orderId);
+
+            return RedirectToAction("Home", "Kitchen");
+        }
+
+        [Route("CancelOrder/{orderId}")]
+        public IActionResult CancelOrder(int orderId)
+        {
+            kitchenService.CancelOrder(orderId);
+
+            return RedirectToAction("Home", "Kitchen");
         }
     }
 }

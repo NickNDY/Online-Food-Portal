@@ -1,5 +1,4 @@
-﻿using MySqlConnector;
-using Online_Food_Portal.Interfaces;
+﻿using Online_Food_Portal.Interfaces;
 using Online_Food_Portal.Models;
 
 namespace Online_Food_Portal.Services
@@ -18,7 +17,7 @@ namespace Online_Food_Portal.Services
         /// <returns>A list of complete orders</returns>
         public List<OrderDTO> GetCompleteOrders()
         {
-            return [.. orderService.GetOrders().Where(x => x.order.completed)];
+            return [.. orderService.GetOrders().Where(x => x.order.completed || x.order.cancelled)];
         }
 
         /// <summary>
@@ -27,22 +26,54 @@ namespace Online_Food_Portal.Services
         /// <returns>A list of incomplete orders</returns>
         public List<OrderDTO> GetIncompleteOrders()
         {
-            return [.. orderService.GetOrders().Where(x => !x.order.completed)];
+            return [.. orderService.GetOrders().Where(x => !x.order.completed && !x.order.cancelled)];
         }
 
         public bool CancelOrder(int orderId)
         {
-            throw new NotImplementedException();
+            OrderDTO? order = orderService.GetOrderDTO(orderId);
+
+            if (order == null)
+                return false;
+
+            order.order.cancelled = true;
+            order.order.date_placed = DateTime.Now;
+
+            orderService.UpdateOrder(order.order);
+
+            // Process refund
+
+            return true;
         }
 
         public bool CompleteOrder(int orderId)
         {
-            throw new NotImplementedException();
+            OrderDTO? order = orderService.GetOrderDTO(orderId);
+
+            if (order == null)
+                return false;
+
+            order.order.completed = !order.order.completed;
+            order.order.date_placed = DateTime.Now;
+
+            orderService.UpdateOrder(order.order);
+
+            return true;
         }
 
         public bool PickupOrder(int orderId)
         {
-            throw new NotImplementedException();
+            OrderDTO? order = orderService.GetOrderDTO(orderId);
+
+            if (order == null)
+                return false;
+
+            order.order.picked_up = !order.order.picked_up;
+            order.order.date_placed = DateTime.Now;
+
+            orderService.UpdateOrder(order.order);
+
+            return true;
         }
     }
 }

@@ -4,8 +4,14 @@ namespace Online_Food_Portal.Interfaces
 {
     public interface IUserService
     {
-        public List<OrderDTO> GetOrders(int userId);
+        // Create
+        public int CreateUser(string username);
 
-        public bool AddItemToOrder(int userId, int itemId);
+        // Read
+        public List<UserModel> GetUsers();
+        public UserModel? GetUserByUsername(string username);
+
+        // Delete
+        public int DeleteUserById(int id);
     }
 }

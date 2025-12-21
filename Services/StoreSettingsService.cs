@@ -1,6 +1,4 @@
-﻿
-using Microsoft.AspNetCore.Mvc.ModelBinding.Binders;
-using MySqlConnector;
+﻿using MySqlConnector;
 using Online_Food_Portal.Interfaces;
 using Online_Food_Portal.Models;
 using System.Collections;
@@ -19,7 +17,7 @@ namespace Online_Food_Portal.Services
         /// Returns the store settings
         /// </summary>
         /// <returns>The store settings. Returns null if the settings have not been set (they are by default)</returns>
-        public StoreSettingsModel? GetStoreSettings()
+        public StoreSettingsModel GetStoreSettings()
         {
             string sqlStatement = $"SELECT * FROM store_settings LIMIT 1";
 
@@ -43,6 +41,7 @@ namespace Online_Food_Portal.Services
 
                         System.Diagnostics.Debug.WriteLine("Retrieved store settings");
                     }
+                    reader.Close();
 
                     connection.Close();
                     System.Diagnostics.Debug.WriteLine("Connection to MySQL closed");
@@ -51,6 +50,14 @@ namespace Online_Food_Portal.Services
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Failed to connect to SQL Database: {ex.Message}");
+            }
+
+            if (storeSettings == null)
+            {
+                StoreSettingsModel defaultSettings = new StoreSettingsModel(TimeSpan.FromHours(8), TimeSpan.FromHours(20), new bool[] { true, true, true, true, true, true, true }, true, "Not Set", "Not Set");
+                SetStoreSettings(defaultSettings);
+
+                return defaultSettings;
             }
 
             return storeSettings;
@@ -79,7 +86,12 @@ namespace Online_Food_Portal.Services
 
                     command.Parameters.Add("@open_time", System.Data.DbType.Time).Value = model.open_time;
                     command.Parameters.Add("@close_time", System.Data.DbType.Time).Value = model.close_time;
-                    command.Parameters.Add("@business_days", System.Data.DbType.String).Value = model.business_days;
+                    string businessDayString = "";
+                    foreach (bool day in model.business_days)
+                    {
+                        businessDayString += day ? "1" : "0";
+                    }
+                    command.Parameters.Add("@business_days", System.Data.DbType.String).Value = businessDayString;
                     command.Parameters.Add("@ordering_enabled", System.Data.DbType.Boolean).Value = model.ordering_enabled;
                     command.Parameters.Add("@store_address", System.Data.DbType.String).Value = model.store_address;
                     command.Parameters.Add("@store_phone", System.Data.DbType.String).Value = model.store_phone;
@@ -108,12 +120,10 @@ namespace Online_Food_Portal.Services
             for (int i = 0; i < businessDays.Length && i < boolArray.Length; i++)
                 boolArray[i] = businessDays[i] == '1';
 
-            BitArray bitArray = new BitArray(boolArray);
-
             return new StoreSettingsModel(
                 reader.GetTimeSpan(1),
                 reader.GetTimeSpan(2),
-                bitArray,
+                boolArray,
                 reader.GetBoolean(4),
                 reader.GetString(5),
                 reader.GetString(6));

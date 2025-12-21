@@ -35,6 +35,14 @@ namespace Online_Food_Portal.Models
         [Required(ErrorMessage = "Disabled Item is a required field")]
         public bool hidden { get; set; }
 
+        public static string webRootPath = "";
+
+        public string image { get { return Path.Exists(imageLocation) ? imageName : "/images/itemplaceholder.jpg"; } }
+
+        public string imageLocation { get { return Path.Join(webRootPath, imageName); } }
+
+        public string imageName { get { return $"/images/{id}{ReplaceInvalidChars(name)}.jpg"; } }
+
         public ItemModel(int id, string name, string description, decimal price, int stock, bool hidden)
         {
             this.id = id;
@@ -43,6 +51,29 @@ namespace Online_Food_Portal.Models
             this.price = price;
             this.stock = stock;
             this.hidden = hidden;
+        }
+
+        private string ReplaceInvalidChars(string name) // Prevents custom name from causing image file name to contain illegal characters
+        {
+            return string.Join("_", name.Split(Path.GetInvalidFileNameChars()));
+        }
+
+        public override bool Equals(object? obj)
+        {
+            if (obj == null || !(obj is ItemModel)) return false;
+
+            return Equals((ItemModel)obj);
+        }
+
+        public bool Equals(ItemModel other)
+        {
+            return
+                id == other.id &&
+                String.Compare(name, other.name) == 0 &&
+                String.Compare(description, other.description) == 0 &&
+                price == other.price &&
+                stock == other.stock &&
+                hidden == other.hidden;
         }
     }
 }

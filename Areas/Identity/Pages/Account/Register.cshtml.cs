@@ -31,7 +31,7 @@ namespace Online_Food_Portal.Areas.Identity.Pages.Account
         private readonly IUserEmailStore<IdentityUserModel> _emailStore;
         private readonly ILogger<RegisterModel> _logger;
         private readonly IEmailSender _emailSender;
-        private readonly Interfaces.IAuthenticationService _userService;
+        private readonly Interfaces.IUserService _userService;
 
 
 
@@ -41,7 +41,7 @@ namespace Online_Food_Portal.Areas.Identity.Pages.Account
             SignInManager<IdentityUserModel> signInManager,
             ILogger<RegisterModel> logger,
             IEmailSender emailSender,
-            Interfaces.IAuthenticationService userService)
+            Interfaces.IUserService userService)
         {
             _userManager = userManager;
             _userStore = userStore;

@@ -9,26 +9,44 @@
 <div style="width: 95%; margin-right: auto; margin-left: auto;">
     @foreach (OrderItemDTO orderItem in Model.items)
     {
-        <div id=@($"orderItem{orderItem.OrderItemModel.id}") class="d-inline-flex" style="width: 100%; padding-top: 15px; border: 1px solid black; border-radius: 5px;">
+        <div class="orderItem d=inline-flex" id=@($"orderItem{orderItem.OrderItemModel.id}") style="width: 100%; padding-top: 15px; border: 1px solid black; border-radius: 5px;">
             <div class="d-inline-flex" style="width: 85%; height: 100%;">
                 <div style="width: 80%; height: 100%;">
-                    <h5>@orderItem.Display</h5>
+                    <h4>@orderItem.Display</h4>
                     @foreach (OrderModificationModel modification in orderItem.OrderModificationModels)
                     {
-                        <p>@($"{modification.modificationModel.name} ${modification.modificationModel.price_offset}")</p>
+                        <p style="margin: 0px; padding: 0px;">@($"{modification.modificationModel.name} ${modification.modificationModel.price_offset}")</p>
                     }
                 </div>
-                <div class="flex-column" style="width: 20%; height: 100%;">
-                    <button style="width: 100%; border-radius: 6px;" onclick="window.location.href='/User/ItemModification?orderItemId=@orderItem.OrderItemModel.id'" class="btn-primary">Modify</button>
-                    <button style="width: 100%; border-radius: 6px;" onclick="RemoveItem(@orderItem.OrderItemModel.id);" class="btn-danger">Remove</button>
-                </div>
             </div>
-            <div style="width: 15%; height: 100%; border: 1px solid black;">
-                <p>$@orderItem.OrderItemModel.itemModel.price.ToString("0.00")</p>
+            <div class="flex-column" style="width: 20%; height: 100%;">
+                <h5>$@orderItem.Price</h5>
+                <button style="border-radius: 6px;" onclick="window.location.href='/User/ItemModification?orderItemId=@orderItem.OrderItemModel.id'" class="btn-primary">Modify</button>
+                <button style="border-radius: 6px;" onclick="RemoveItem(@orderItem.OrderItemModel.id);" class="btn-danger">Remove</button>
             </div>
         </div>
     }
 </div>
+@if (Model.items.Count > 0)
+{
+    <div id="cartOptions" style="width: 90%; margin-right: auto; margin-left: auto; display: flex;">
+        <div style="width: 40%; margin-right: auto; display: flex; justify-content: flex-start;">
+            <a href="/User/CancelOrder" style="margin: auto" class="btn btn-danger" role="button">Cancel Order</a>
+        </div>
+        <div style="width: 40%; margin-left: auto; display: flex; justify-content: flex-end;">
+            <a href="/User/SubmitOrder" style="margin: auto;" class="btn btn-primary" role="button">Submit Order</a>
+        </div>
+    </div>
+    <div id="menuRedirect" style="width: 100%; height: 100%; margin: auto; justify-content: center; display: flex;" hidden>
+        <h4>Your cart is empty! <a href="/User/Menu">Add some items</a></h4>
+    </div>
+}
+@if (Model.items.Count == 0)
+{
+    <div id="menuRedirect" style="width: 100%; height: 100%; margin: auto; justify-content: center; display: flex;">
+        <h4>Your cart is empty! <a href="/User/Menu">Add some items</a></h4>
+    </div>
+}
 
 <script>
     function RemoveItem(itemId)
@@ -39,6 +57,25 @@
         if (element)
         {
             element.parentNode.removeChild(element);
+        }
+
+        var orderItems = document.querySelectorAll(".orderItem");
+
+        if (orderItems.length == 0)
+        {
+            var cartOptions = document.getElementById("cartOptions");
+
+            if (cartOptions)
+            {
+                cartOptions.hidden = true;
+            }
+
+            var menuRedirect = document.getElementById("menuRedirect");
+
+            if (menuRedirect)
+            {
+                menuRedirect.hidden = false;
+            }
         }
 
         let url = window.location.origin + "/api/User/RemoveItemFromOrder";

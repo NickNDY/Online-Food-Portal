@@ -23,5 +23,22 @@
             this.items_id = items_id;
             this.itemModel = itemModel;
         }
+
+        public override bool Equals(object? obj)
+        {
+            if (obj == null || !(obj is OrderItemModel)) return false;
+            
+            return Equals((OrderItemModel)obj);
+        }
+
+        public bool Equals(OrderItemModel other)
+        {
+            return
+                id == other.id &&
+                quantity == other.quantity &&
+                orders_id == other.orders_id &&
+                items_id == other.items_id &&
+                itemModel.Equals(other.itemModel);
+        }
     }
 }

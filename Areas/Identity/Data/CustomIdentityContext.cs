@@ -29,6 +29,4 @@ public class CustomIdentityContext : IdentityDbContext<IdentityUserModel>
     }
 
 public DbSet<Online_Food_Portal.Models.ItemModel> ItemModel { get; set; } = default!;
-
-public DbSet<Online_Food_Portal.Models.OrderModel> OrderModel { get; set; } = default!;
 }

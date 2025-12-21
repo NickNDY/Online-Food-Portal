@@ -1,5 +1,111 @@
-﻿@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
+﻿@using Online_Food_Portal.Models
+@model StoreSettingsModel
+
 @{
+    ViewData["Title"] = "Order View";
+    Layout = "~/Pages/Shared/_Layout.cshtml";
 }
+
+<div class="d-flex flex-column" style="width: 75%; margin-left: auto; margin-right: auto;">
+    <p class="labelClose">Open Time</p>
+    <input id="openTime" type="time" value="@Model.open_time" />
+    <p class="labelClose">Close Time</p>
+    <input id="closeTime" type="time" value="@Model.close_time" />
+    <p class="labelClose">Business Days</p>
+    <div class="d-flex flex-row">
+        @for (int i = 0; i < Enum.GetValues(typeof(DayOfWeek)).Length; i++)
+        {
+            <div class="d-flex flex-column" style="width: 8%;">
+                @{ string day = $"{(DayOfWeek)i}"; }
+                <p class="labelClose">@day</p>
+                <label class="switch">
+                    @if (Model.business_days[i])
+                    {
+                        <input type="checkbox" class="daySwitch" id="@day" checked>
+                    }
+                    @if (!Model.business_days[i])
+                    {
+                        <input type="checkbox" class="daySwitch" id="@day">
+                    }
+                    <span class="slider round"></span>
+                </label>
+            </div>
+        }
+    </div>
+    <p class="labelClose">Ordering Enabled</p>
+    <label class="switch">
+        @if (Model.ordering_enabled)
+        {
+            <input type="checkbox" id="orderingEnabled" checked>
+        }
+        @if (!Model.ordering_enabled)
+        {
+            <input type="checkbox" id="orderingEnabled">
+        }
+        <span class="slider round"></span>
+    </label>
+    <p class="labelClose">Store Address</p>
+    <input id="storeAddress" type="text" maxlength="512" value="@Model.store_address" />
+    <p class="labelClose">Store Phone</p>
+    <input id="storePhone" type="text" maxlength="11" value="@Model.store_phone" />
+    <button onclick="UpdateAddress();" class="btn btn-primary" style="margin-top: 20px;">Update</button>
+</div>
+
+<script>
+    async function UpdateAddress()
+    {
+        const url = window.location.origin + '/Administrative/StoreSettings';
+
+        const openElem = document.getElementById("openTime");
+        const closeElem = document.getElementById("closeTime");
+        const daySwitches = document.querySelectorAll(".daySwitch");
+        const orderSwitchElem = document.getElementById("orderingEnabled");
+        const addressElem = document.getElementById("storeAddress");
+        const phoneElem = document.getElementById("storePhone");
+
+        if (openElem &&
+            closeElem &&
+            daySwitches.length == 7 &&
+            orderSwitchElem &&
+            addressElem &&
+            phoneElem)
+        {
+            let daysEnabled = [];
+
+            daySwitches.forEach(day => {
+                daysEnabled.push(day.checked);
+            });
+
+            const payload =
+            {
+                open_time: openElem.value,
+                close_time: closeElem.value,
+                business_days: daysEnabled,
+                ordering_enabled: orderSwitchElem.checked,
+                store_address: addressElem.value,
+                store_phone: phoneElem.value
+            };
+
+            const response = await fetch(url,
+            {
+                method: "POST",
+                credentials: 'same-origin',
+                body: JSON.stringify(payload),
+                headers: {
+                    "Content-Type": "application/json",
+                    "Host": window.location.host
+                }
+            });
+
+            if (!response.ok)
+            {
+                const responseText = await response.text();
+                alert("Response: " + response.status + ", " + responseText);
+            }
+            else
+            {
+                window.location.reload();
+            }
+        }
+    }
+</script>

@@ -14,10 +14,11 @@ namespace Online_Food_Portal.Services
     /// </remarks>
     /// <param name="connectionStringBuilder">The SqlConnectionStringBuilder service used to generate the connection string once</param>
     /// <param name="modificationService">The ModificationService used to delete modifications when deleting an item during testing</param>
-    public class ItemService(ISqlConnectionStringBuilder connectionStringBuilder, IModificationService modificationService) : IItemService
+    public class ItemService(ISqlConnectionStringBuilder connectionStringBuilder, IModificationService modificationService, IWebHostEnvironment webHostEnvironment) : IItemService
     {
         private readonly IModificationService modificationService = modificationService; // Used for item+modification(s) retrieval or DELETE testing
         private readonly string connectionString = connectionStringBuilder.GenerateConnectionString(); // The MySQL connection string
+        private readonly IWebHostEnvironment webHostEnvironment = webHostEnvironment;
 
         /// <summary>
         /// Creates an item
@@ -86,9 +87,9 @@ namespace Online_Food_Portal.Services
         /// <param name="orders_id">The ID of the order</param>
         /// <param name="items_id">The ID of the item</param>
         /// <returns>The ID of the created order item. -1 for failure.</returns>
-        public int AddOrderItem(int orders_id, int items_id)
+        public int AddOrderItem(int orders_id, int items_id, int quantity, List<int>? modificationIds, bool useDefaultModifications)
         {
-            string sqlStatement = $"INSERT INTO order_items (quantity, orders_id, items_id) VALUES (1, {orders_id}, {items_id})";
+            string sqlStatement = $"INSERT INTO order_items (quantity, orders_id, items_id) VALUES ({quantity}, {orders_id}, {items_id})";
 
             int createdItemId = -1;
 
@@ -108,7 +109,7 @@ namespace Online_Food_Portal.Services
 
                     if (affectedRows == 1)
                     {
-                        sqlStatement = "SELECT LAST(id) FROM order_items";
+                        sqlStatement = "SELECT MAX(id) FROM order_items";
                         command = new MySqlCommand(sqlStatement, connection);
 
                         object? lastItemId = command.ExecuteScalar();
@@ -117,9 +118,17 @@ namespace Online_Food_Portal.Services
                         {
                             createdItemId = (int)lastItemId;
 
-                            List<ModificationModel> modifications = [.. modificationService.GetModificationsByItemId(items_id).Where(x => x.defaultModification)];
-                            foreach (ModificationModel modification in modifications)
-                                modificationService.AddOrderModification(createdItemId, modification.id);
+                            if (useDefaultModifications)
+                            {
+                                List<ModificationModel> modifications = [.. modificationService.GetModificationsByItemId(items_id).Where(x => x.defaultModification)];
+                                foreach (ModificationModel modification in modifications)
+                                    modificationService.AddOrderModification(createdItemId, modification.id);
+                            }
+                            else if (modificationIds != null)
+                            {
+                                foreach (int modificationId in modificationIds)
+                                    modificationService.AddOrderModification(createdItemId, modificationId);
+                            }
                         }
                     }
 
@@ -133,6 +142,79 @@ namespace Online_Food_Portal.Services
             }
 
             return createdItemId;
+        }
+
+        /// <summary>
+        /// Update item in order
+        /// </summary>
+        /// <param name="orderItemId">The Order Item ID</param>
+        /// <param name="quantity">The quantity of the item</param>
+        /// <param name="modificationIds">The list of Modification IDs applied to the item</param>
+        /// <returns></returns>
+        public int UpdateOrderItem(int orderItemId, int quantity, List<int> modificationIds)
+        {
+            string sqlStatement = $"UPDATE order_items SET quantity = {quantity} WHERE id = {orderItemId}";
+
+            int affectedRows = 0;
+
+            try
+            {
+                using (MySqlConnection connection = new MySqlConnection(connectionString))
+                {
+                    connection.Open();
+
+                    ///
+                    // UPDATE Order Item
+                    ///
+                    System.Diagnostics.Debug.WriteLine($"Connection to MySQL successful, updating order item with ID: {orderItemId}, Quantity: {quantity}, and Modifications: {string.Join(',', modificationIds)}");
+
+                    MySqlCommand command = new MySqlCommand(sqlStatement, connection);
+
+                    affectedRows = command.ExecuteNonQuery();
+
+                    System.Diagnostics.Debug.WriteLine($"Updated order item: {(affectedRows == 1 ? "True" : "False")}");
+
+                    ///
+                    // UPDATE Order Item Modifications
+                    ///
+                    sqlStatement = $"SELECT * FROM order_modifications WHERE order_items_id = {orderItemId}"; // Get existing modifications
+
+                    HashSet<int> existingModificationSet = new HashSet<int>(); // For lookup of existing modifications
+                    List<Tuple<int, int>> existingModifications = new List<Tuple<int, int>>(); // For recording existing modifications, both Order Modification ID and Modification ID
+
+                    command = new MySqlCommand(sqlStatement, connection);
+
+                    MySqlDataReader reader = command.ExecuteReader();
+
+                    while (reader.Read())
+                    {
+                        existingModificationSet.Add(reader.GetInt32(1)); // Record existing Modification ID for lookup
+                        existingModifications.Add(Tuple.Create<int, int>(reader.GetInt32(0), reader.GetInt32(1))); // Record existing Order Modification ID and Modification ID
+                    }
+                    reader.Close();
+
+                    foreach (int modificationId in modificationIds) // Compare requested modifications
+                    {
+                        if (!existingModificationSet.Contains(modificationId)) // If not applied
+                            modificationService.AddOrderModification(orderItemId, modificationId); // Apply modification
+                    }
+
+                    foreach (Tuple<int, int> modification in existingModifications) // Compare existing modifications
+                    {
+                        if (!modificationIds.Contains(modification.Item2)) // If not requested
+                            modificationService.DeleteOrderModification(modification.Item1); // Remove modification
+                    }
+
+                    connection.Close();
+                    System.Diagnostics.Debug.WriteLine("Connection to MySQL closed");
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Failed to connect to SQL Database: {ex.Message}");
+            }
+
+            return affectedRows;
         }
 
         /// <summary>
@@ -164,6 +246,7 @@ namespace Online_Food_Portal.Services
 
                         System.Diagnostics.Debug.WriteLine($"Found item: {list.Last().id}:{list.Last().name}");
                     }
+                    reader.Close();
 
                     connection.Close();
                     System.Diagnostics.Debug.WriteLine("Connection to MySQL closed");
@@ -210,6 +293,7 @@ namespace Online_Food_Portal.Services
                     }
                     else
                         System.Diagnostics.Debug.WriteLine($"Failed to find item with id: {id}");
+                    reader.Close();
 
                     connection.Close();
                     System.Diagnostics.Debug.WriteLine("Connection to MySQL closed");
@@ -230,6 +314,8 @@ namespace Online_Food_Portal.Services
         /// <returns></returns>
         public int UpdateItem(ItemModel item)
         {
+            ItemModel? originalItem = GetItem(item.id);
+
             string sqlStatement = $"UPDATE items SET name = @name, description = @description, price = @price, stock = @stock, hidden = @hidden WHERE id = @id";
 
             int affectedRows = 0;
@@ -253,6 +339,11 @@ namespace Online_Food_Portal.Services
 
                     affectedRows = command.ExecuteNonQuery();
 
+                    if (affectedRows == 1 && originalItem != null && File.Exists(originalItem.imageLocation))
+                    {
+                        File.Move(originalItem.imageLocation, item.imageLocation);
+                    }
+
                     System.Diagnostics.Debug.WriteLine($"Updated item: {(affectedRows == 1 ? "True" : "False")}");
 
                     connection.Close();
@@ -268,22 +359,14 @@ namespace Online_Food_Portal.Services
         }
 
         /// <summary>
-        /// Deletes an item and all of its' modifications
-        /// NOTE: For testing purposes only! Does not delete modifications from orders and will fail if used to delete a modification in production used in an order
+        /// Deletes an item
+        /// NOTE: For testing purposes only!
         /// </summary>
         /// <param name="id">The ID of the item to delete</param>
         /// <returns>The number of rows affected. 1 for success, 0 for failure</returns>
         public int DeleteItem(int id)
         {
-            int affectedRows;
-
-            System.Diagnostics.Debug.WriteLine("Deleting item modifications");
-
-            affectedRows = modificationService.DeleteModificationsByItemId(id);
-
-            System.Diagnostics.Debug.WriteLine($"Deleted item modifications: {affectedRows}");
-
-            affectedRows = 0;
+            int affectedRows = 0;
 
             string sqlStatement = $"DELETE FROM items WHERE id = @id";
 
@@ -316,14 +399,12 @@ namespace Online_Food_Portal.Services
         }
 
         /// <summary>
-        /// Remove an item from an order including all of its modifications
+        /// Remove an item from an order
         /// </summary>
         /// <param name="id">The ID of the order item</param>
         /// <returns></returns>
         public int DeleteOrderItem(int id)
         {
-            modificationService.DeleteAllOrderModificationsByOrderItemId(id);
-
             string sqlStatement = $"DELETE FROM order_items WHERE id = {id}";
 
             int affectedRows = -1;
@@ -355,10 +436,42 @@ namespace Online_Food_Portal.Services
         }
 
         /// <summary>
-        /// Parses the SQL data columns into a C# object
+        /// Removes all items from an order for resetting the current order
         /// </summary>
-        /// <param name="reader">The MySqlDataReader containing the current entry</param>
-        /// <returns>The parsed ItemModel</returns>
+        /// <param name="orderId">The ID of the order to remove items from</param>
+        /// <returns></returns>
+        public int DeleteAllOrderItemsByOrderId(int orderId)
+        {
+            string sqlStatement = $"DELETE FROM order_items WHERE orders_id = {orderId}";
+
+            int affectedRows = -1;
+
+            try
+            {
+                using (MySqlConnection connection = new MySqlConnection(connectionString))
+                {
+                    connection.Open();
+
+                    System.Diagnostics.Debug.WriteLine("Connection to MySQL successful, deleting order items");
+
+                    MySqlCommand command = new MySqlCommand(sqlStatement, connection);
+
+                    affectedRows = command.ExecuteNonQuery();
+
+                    System.Diagnostics.Debug.WriteLine($"Deleted order items: {(affectedRows > 0 ? "True" : "False")}");
+
+                    connection.Close();
+                    System.Diagnostics.Debug.WriteLine("Connection to MySQL closed");
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Failed to connect to SQL Database: {ex.Message}");
+            }
+
+            return affectedRows;
+        }
+
         private static ItemModel ParseReaderToItemModel(MySqlDataReader reader)
         {
             return new ItemModel(

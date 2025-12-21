@@ -1,0 +1,15 @@
+﻿@model Online_Food_Portal.Models.ItemModel
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+
+@{
+    ViewData["Title"] = "Set Item Image";
+    Layout = "~/Pages/Shared/_Layout.cshtml";
+}
+
+<div>
+    <img src="@Model.image" runat="server" style="width: 30%;" alt="..." asp-append-version="true" />
+    <form method="post" enctype="multipart/form-data" action="/Administrative/UploadImage/@Model.id">
+        <input type="file" name="image" id="image" accept="image/*" />
+        <input type="submit" value="Upload" />
+    </form>
+</div>

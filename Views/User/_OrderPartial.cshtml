@@ -1,0 +1,63 @@
+﻿@using Online_Food_Portal.Models
+@model OrderModel
+
+@if (!Model.cancelled && (!Model.completed || !Model.picked_up))
+{
+    <div class="incompleteOrder" id="@Model.id" )">
+        <div class="card">
+            <div class="card-body orderSummary">
+                <h5 class="card-title">@($"Order ID: {Model.id}")</h5>
+                <p>$@(Model.subtotal.ToString("0.00"))</p>
+                @if (Model.submitted)
+                {
+                    if (Model.cancelled)
+                    {
+                        <p style="color: red;">Order Cancelled</p>
+                    }
+                    else if (Model.picked_up)
+                    {
+                        <p>Picked Up at @($"{Model.date_placed.ToShortDateString()} {Model.date_placed.ToShortTimeString()}")</p>
+                    }
+                    else if (Model.completed)
+                    {
+                        <p>Order Completed, Awaiting Pick Up at @($"{Model.date_placed.ToShortDateString()} {Model.date_placed.ToShortTimeString()}")</p>
+                    }
+                    else
+                    {
+                        <p>Submitted, Pending Completion at @($"{Model.date_placed.ToShortDateString()} {Model.date_placed.ToShortTimeString()}")</p>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <div id="@Model.id" )">
+        <div class="card">
+            <div class="card-body orderSummary">
+                <h5 class="card-title">@($"Order ID: {Model.id}")</h5>
+                <p>$@(Model.subtotal.ToString("0.00"))</p>
+                @if (Model.submitted)
+                {
+                    if (Model.cancelled)
+                    {
+                        <p style="color: red;">Order Cancelled</p>
+                    }
+                    else if (Model.picked_up)
+                    {
+                        <p>Picked Up at @($"{Model.date_placed.ToShortDateString()} {Model.date_placed.ToShortTimeString()}")</p>
+                    }
+                    else if (Model.completed)
+                    {
+                        <p>Order Completed at @($"{Model.date_placed.ToShortDateString()} {Model.date_placed.ToShortTimeString()}")</p>
+                    }
+                    else
+                    {
+                        <p>Submitted, Pending Completion at @($"{Model.date_placed.ToShortDateString()} {Model.date_placed.ToShortTimeString()}")</p>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+}

@@ -1,5 +1,81 @@
-﻿@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
+﻿@using Online_Food_Portal.Models
+@model List<OrderModel>
+
 @{
+	ViewData["Title"] = "Order View";
+	Layout = "~/Pages/Shared/_Layout.cshtml";
 }
+
+<div id="orderList" style="width: 100;">
+	@foreach (OrderModel order in Model)
+	{
+		@Html.Partial("_OrderPartial", order);
+	}
+</div>
+
+<script>
+	window.addEventListener('load', (event) => {
+		CheckOrder();
+	});
+
+	function CheckOrder() {
+		let incompleteOrders = document.querySelectorAll(".incompleteOrder");
+
+		let refreshOrderList = [];
+
+		incompleteOrders.forEach(orderParentElement => {
+			refreshOrderList.push(orderParentElement.id);
+		});
+
+		let url = window.location.origin + '/User/PartialOrder/';
+
+		for (const orderId of refreshOrderList) {
+			fetch(url + orderId,
+			{
+				method: "GET",
+				credentials: 'same-origin',
+				headers: {
+					"Host": window.location.host
+				}
+			})
+			.then(response => {
+				if (response.ok)
+				{
+					return response.text();
+				}
+				else
+				{
+					let newBody = document.createElement("body");
+					let newP = document.createElement("p");
+					newP.innerText = "Failed to load order";
+					newBody.appendChild(newP);
+					return newBody.outerHTML;
+				}
+			})
+			.then(html => {
+				replaceCart(html, orderId);
+			});
+		}
+
+		if (refreshOrderList.length > 0)
+			setTimeout(CheckOrder, 10000);
+	}
+
+	function replaceCart(htmlText, orderId) {
+			const element = document.getElementById("orderList");
+
+			if (element)
+			{
+				const oldElement = document.getElementById(orderId);
+				if (oldElement)
+				{
+					const parser = new DOMParser();
+
+					const newElement = parser.parseFromString(htmlText, "text/html");
+
+					oldElement.replaceWith(newElement.body.firstChild);
+				}
+
+			}
+	}
+</script>

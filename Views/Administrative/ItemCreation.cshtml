@@ -1,5 +1,248 @@
-﻿@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
+﻿@using Online_Food_Portal.Controllers
+@model AdministrativeController.ItemCreationModel
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+
 @{
+    ViewData["Title"] = Model.id <= 0 ? "Item Creation" : "Item Modification";
+    Layout = "~/Pages/Shared/_Layout.cshtml";
 }
+
+<div class="d-flex flex-column">
+    <img src="@Model.image" runat="server" style="width: 30%;" alt="..." asp-append-version="true" />
+    <input id="itemId" type="number" value="@Model.id" hidden />
+    <p>Name</p>
+    <input id="itemName" type="text" value="@Model.name" />
+    <p>Description</p>
+    <textarea id="itemDescription">@Model.description</textarea>
+    <p>Price</p>
+    <input id="itemPrice" type="number" value="@Model.price" min="0.01" />
+    <p>Stock</p>
+    <input id="itemStock" type="number" value="@Model.stock" min="-1" />
+    <p>Hidden</p>
+    <label class="switch">
+        @if (Model.hidden)
+        {
+            <input id="itemHidden" type="checkbox" checked />
+        }
+        @if (!Model.hidden)
+        {
+            <input id="itemHidden" type="checkbox" />
+        }
+        <span class="slider round"></span>
+    </label>
+    <h4>Modifications</h4>
+    <div id="modificationList" class="d-flex flex-column">
+        @{ int modificationCount = 0; }
+        @foreach (AdministrativeController.ModificationCreationModel modificationCreationModel in Model.modifications)
+        {
+            @if (modificationCount > 0)
+            {
+                <hr/>
+            }
+            <div class="modification d-flex flex-column">
+                <input class="modificationId" type="number" value="@modificationCreationModel.id" hidden />
+                <p>Name</p>
+                <input class="modificationName" type="text" value="@modificationCreationModel.name" />
+                <p>Description</p>
+                <textarea class="modificationDescription">@modificationCreationModel.description</textarea>
+                <p>Price</p>
+                <input class="modificationPrice" type="number" step="0.01" value="@modificationCreationModel.price_offset" min="0" />
+                <p>Stock</p>
+                <input class="modificationStock" type="number" value="@modificationCreationModel.stock" min="-1" />
+                <p>Default</p>
+                <label class="switch">
+                    @if (modificationCreationModel.defaultModification)
+                    {
+                        <input class="modificationDefault" type="checkbox" checked />
+                    }
+                    @if (!modificationCreationModel.defaultModification)
+                    {
+                        <input class="modificationDefault" type="checkbox" />
+                    }
+                    <span class="slider round"></span>
+                </label>
+                <p>Hidden</p>
+                <label class="switch">
+                    @if (modificationCreationModel.hidden)
+                    {
+                        <input class="modificationHidden" type="checkbox" checked />
+                    }
+                    @if (!modificationCreationModel.hidden)
+                    {
+                        <input class="modificationHidden" type="checkbox" />
+                    }
+                    <span class="slider round"></span>
+                </label>
+            </div>
+            modificationCount++;
+        }
+    </div>
+    <button onclick="AddModification();" class="btn btn-primary" style="width: 20%; margin-top: 20px;">Add Modification</button>
+    <div class="hiddenModification" id="modificationTemplate">
+        <input class="modificationId" type="number" value="-1" hidden />
+        <p>Name</p>
+        <input class="modificationName" type="text" />
+        <p>Description</p>
+        <textarea class="modificationDescription"></textarea>
+        <p>Price</p>
+        <input class="modificationPrice" type="number" step="0.01" min="0" value="0" />
+        <p>Stock</p>
+        <input class="modificationStock" type="number" min="-1" value="-1" />
+        <p>Default</p>
+        <label class="switch">
+            <input class="modificationDefault" type="checkbox" checked />
+            <span class="slider round"></span>
+        </label>
+        <p>Hidden</p>
+        <label class="switch">
+            <input class="modificationHidden" type="checkbox" />
+            <span class="slider round"></span>
+        </label>
+        <button id="modificationRemove" class="btn btn-danger" style="width: 20%;">Remove Modification</button>
+    </div>
+    @if (Model.id <= 0)
+    {
+        <button onclick="SubmitItem();" class="btn btn-primary" style="width: 20%; margin-top: 20px;">Create Item</button>
+    }
+    @if (Model.id > 0)
+    {
+        <button onclick="SubmitItem();" class="btn btn-primary" style="width: 20%; margin-top: 20px;">Update Item</button>
+    }
+</div>
+
+<script>
+    let modificationNumber = 1;
+
+    function AddModification()
+    {
+        const modificationList = document.getElementById("modificationList");
+        let modificationTemplate = document.getElementById("modificationTemplate").cloneNode(true);
+        let modificationRemove = modificationTemplate.querySelector("#modificationRemove");
+        if (modificationList && modificationTemplate && modificationRemove)
+        {
+            modificationTemplate.id = "modification" + modificationNumber;
+            modificationTemplate.classList.remove("hiddenModification");
+            modificationTemplate.classList.add("modification", "d-flex", "flex-column");
+            modificationRemove.removeAttribute("id");
+            const tempModificationNumber = modificationNumber;
+            modificationRemove.addEventListener("click", () => {
+                RemoveModification(tempModificationNumber);
+            });
+
+            if (modificationList.childElementCount > 0)
+            {
+                modificationList.appendChild(document.createElement('hr'));
+            }
+
+            modificationList.appendChild(modificationTemplate);
+
+            modificationNumber = modificationNumber + 1;
+        }
+    }
+
+    function RemoveModification(number)
+    {
+        const modificationList = document.getElementById("modificationList");
+        const modification = document.getElementById("modification" + number);
+
+        if (modificationList && modification)
+        {
+            modificationList.removeChild(modification);
+        }
+    }
+
+    async function SubmitItem()
+    {
+        let url = window.location.origin + '/Administrative/ItemCreation';
+
+        const itemIdElem = document.getElementById("itemId");
+        const itemNameElem = document.getElementById("itemName");
+        const itemDescriptionElem = document.getElementById("itemDescription");
+        const itemPriceElem = document.getElementById("itemPrice");
+        const itemStock = document.getElementById("itemStock");
+        const itemHidden = document.getElementById("itemHidden");
+
+        const modificationList = document.querySelectorAll(".modification");
+        let modificationObjects = [];
+
+        modificationList.forEach(modificationElem => {
+            let modificationIdElem = modificationElem.querySelector(".modificationId");
+            let modificationNameElem = modificationElem.querySelector(".modificationName");
+            let modificationDescriptionElem = modificationElem.querySelector(".modificationDescription");
+            let modificationPriceElem = modificationElem.querySelector(".modificationPrice");
+            let modificationStockElem = modificationElem.querySelector(".modificationStock");
+            let modificationDefaultElem = modificationElem.querySelector(".modificationDefault");
+            let modificationHiddenElem = modificationElem.querySelector(".modificationHidden");
+
+            if (modificationIdElem &&
+            modificationNameElem &&
+            modificationDescriptionElem &&
+            modificationPriceElem &&
+            modificationStockElem &&
+            modificationDefaultElem &&
+            modificationHiddenElem)
+            {
+                let modificationObject =
+                {
+                    id: modificationIdElem.value,
+                    name: modificationNameElem.value,
+                    description: modificationDescriptionElem.value,
+                    price_offset: modificationPriceElem.value,
+                    stock: modificationStockElem.value,
+                    defaultModification: modificationDefaultElem.checked,
+                    hidden: modificationHiddenElem.checked
+                };
+
+                modificationObjects.push(modificationObject);
+            }
+            else
+            {
+                console.log("A modification object was not found");
+            }
+        });
+
+        if (itemIdElem &&
+        itemNameElem &&
+        itemDescriptionElem &&
+        itemPriceElem &&
+        itemStock &&
+        itemHidden)
+        {
+            let payload =
+            {
+                id: itemIdElem.value,
+                name: itemNameElem.value,
+                description: itemDescriptionElem.value,
+                price: itemPriceElem.value,
+                stock: itemStock.value,
+                hidden: itemHidden.checked,
+                modifications: modificationObjects
+            };
+
+            const response = await fetch(url,
+            {
+                method: "POST",
+                credentials: 'same-origin',
+                body: JSON.stringify(payload),
+                headers: {
+                    "Content-Type": "application/json",
+                    "Host": window.location.host
+                }
+            });
+
+            if (response.ok)
+            {
+                window.location = window.location.origin + '/Administrative/Home';
+            }
+            else
+            {
+                const text = await response.text();
+                alert("Error: " + response.status + ": " + text);
+            }
+        }
+        else
+        {
+            console.log("An item element was not found");
+        }
+    }
+</script>
