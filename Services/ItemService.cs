@@ -145,79 +145,6 @@ namespace Online_Food_Portal.Services
         }
 
         /// <summary>
-        /// Update item in order
-        /// </summary>
-        /// <param name="orderItemId">The Order Item ID</param>
-        /// <param name="quantity">The quantity of the item</param>
-        /// <param name="modificationIds">The list of Modification IDs applied to the item</param>
-        /// <returns></returns>
-        public int UpdateOrderItem(int orderItemId, int quantity, List<int> modificationIds)
-        {
-            string sqlStatement = $"UPDATE order_items SET quantity = {quantity} WHERE id = {orderItemId}";
-
-            int affectedRows = 0;
-
-            try
-            {
-                using (MySqlConnection connection = new MySqlConnection(connectionString))
-                {
-                    connection.Open();
-
-                    ///
-                    // UPDATE Order Item
-                    ///
-                    System.Diagnostics.Debug.WriteLine($"Connection to MySQL successful, updating order item with ID: {orderItemId}, Quantity: {quantity}, and Modifications: {string.Join(',', modificationIds)}");
-
-                    MySqlCommand command = new MySqlCommand(sqlStatement, connection);
-
-                    affectedRows = command.ExecuteNonQuery();
-
-                    System.Diagnostics.Debug.WriteLine($"Updated order item: {(affectedRows == 1 ? "True" : "False")}");
-
-                    ///
-                    // UPDATE Order Item Modifications
-                    ///
-                    sqlStatement = $"SELECT * FROM order_modifications WHERE order_items_id = {orderItemId}"; // Get existing modifications
-
-                    HashSet<int> existingModificationSet = new HashSet<int>(); // For lookup of existing modifications
-                    List<Tuple<int, int>> existingModifications = new List<Tuple<int, int>>(); // For recording existing modifications, both Order Modification ID and Modification ID
-
-                    command = new MySqlCommand(sqlStatement, connection);
-
-                    MySqlDataReader reader = command.ExecuteReader();
-
-                    while (reader.Read())
-                    {
-                        existingModificationSet.Add(reader.GetInt32(1)); // Record existing Modification ID for lookup
-                        existingModifications.Add(Tuple.Create<int, int>(reader.GetInt32(0), reader.GetInt32(1))); // Record existing Order Modification ID and Modification ID
-                    }
-                    reader.Close();
-
-                    foreach (int modificationId in modificationIds) // Compare requested modifications
-                    {
-                        if (!existingModificationSet.Contains(modificationId)) // If not applied
-                            modificationService.AddOrderModification(orderItemId, modificationId); // Apply modification
-                    }
-
-                    foreach (Tuple<int, int> modification in existingModifications) // Compare existing modifications
-                    {
-                        if (!modificationIds.Contains(modification.Item2)) // If not requested
-                            modificationService.DeleteOrderModification(modification.Item1); // Remove modification
-                    }
-
-                    connection.Close();
-                    System.Diagnostics.Debug.WriteLine("Connection to MySQL closed");
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Failed to connect to SQL Database: {ex.Message}");
-            }
-
-            return affectedRows;
-        }
-
-        /// <summary>
         /// Gets a list of all items
         /// </summary>
         /// <param name="onlyAvailableItems">Only return items that are not hidden and are in stock</param>
@@ -345,6 +272,79 @@ namespace Online_Food_Portal.Services
                     }
 
                     System.Diagnostics.Debug.WriteLine($"Updated item: {(affectedRows == 1 ? "True" : "False")}");
+
+                    connection.Close();
+                    System.Diagnostics.Debug.WriteLine("Connection to MySQL closed");
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Failed to connect to SQL Database: {ex.Message}");
+            }
+
+            return affectedRows;
+        }
+
+        /// <summary>
+        /// Update item in order
+        /// </summary>
+        /// <param name="orderItemId">The Order Item ID</param>
+        /// <param name="quantity">The quantity of the item</param>
+        /// <param name="modificationIds">The list of Modification IDs applied to the item</param>
+        /// <returns></returns>
+        public int UpdateOrderItem(int orderItemId, int quantity, List<int> modificationIds)
+        {
+            string sqlStatement = $"UPDATE order_items SET quantity = {quantity} WHERE id = {orderItemId}";
+
+            int affectedRows = 0;
+
+            try
+            {
+                using (MySqlConnection connection = new MySqlConnection(connectionString))
+                {
+                    connection.Open();
+
+                    ///
+                    // UPDATE Order Item
+                    ///
+                    System.Diagnostics.Debug.WriteLine($"Connection to MySQL successful, updating order item with ID: {orderItemId}, Quantity: {quantity}, and Modifications: {string.Join(',', modificationIds)}");
+
+                    MySqlCommand command = new MySqlCommand(sqlStatement, connection);
+
+                    affectedRows = command.ExecuteNonQuery();
+
+                    System.Diagnostics.Debug.WriteLine($"Updated order item: {(affectedRows == 1 ? "True" : "False")}");
+
+                    ///
+                    // UPDATE Order Item Modifications
+                    ///
+                    sqlStatement = $"SELECT * FROM order_modifications WHERE order_items_id = {orderItemId}"; // Get existing modifications
+
+                    HashSet<int> existingModificationSet = new HashSet<int>(); // For lookup of existing modifications
+                    List<Tuple<int, int>> existingModifications = new List<Tuple<int, int>>(); // For recording existing modifications, both Order Modification ID and Modification ID
+
+                    command = new MySqlCommand(sqlStatement, connection);
+
+                    MySqlDataReader reader = command.ExecuteReader();
+
+                    while (reader.Read())
+                    {
+                        existingModificationSet.Add(reader.GetInt32(1)); // Record existing Modification ID for lookup
+                        existingModifications.Add(Tuple.Create<int, int>(reader.GetInt32(0), reader.GetInt32(1))); // Record existing Order Modification ID and Modification ID
+                    }
+                    reader.Close();
+
+                    foreach (int modificationId in modificationIds) // Compare requested modifications
+                    {
+                        if (!existingModificationSet.Contains(modificationId)) // If not applied
+                            modificationService.AddOrderModification(orderItemId, modificationId); // Apply modification
+                    }
+
+                    foreach (Tuple<int, int> modification in existingModifications) // Compare existing modifications
+                    {
+                        if (!modificationIds.Contains(modification.Item2)) // If not requested
+                            modificationService.DeleteOrderModification(modification.Item1); // Remove modification
+                    }
 
                     connection.Close();
                     System.Diagnostics.Debug.WriteLine("Connection to MySQL closed");

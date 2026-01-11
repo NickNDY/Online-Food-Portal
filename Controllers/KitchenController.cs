@@ -7,16 +7,10 @@ namespace Online_Food_Portal.Controllers
 {
     [Route("Kitchen")]
     [Authorize(Roles = "Kitchen")]
-    public class KitchenController : Controller
+    public class KitchenController(IKitchenService kitchenService, IOrderService orderService) : Controller
     {
-        private readonly IKitchenService kitchenService;
-        private readonly IOrderService orderService;
-
-        public KitchenController(IKitchenService kitchenService, IOrderService orderService)
-        {
-            this.kitchenService = kitchenService;
-            this.orderService = orderService;
-        }
+        private readonly IKitchenService kitchenService = kitchenService;
+        private readonly IOrderService orderService = orderService;
 
         /// <summary>
         /// Orders In Progress Page

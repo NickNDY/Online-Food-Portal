@@ -538,10 +538,5 @@ namespace Online_Food_Portal.Services
                     reader.GetBoolean(9),
                     reader.GetInt32(10)));
         }
-
-        public int UpdateOrder(OrderDTO orderModel)
-        {
-            throw new NotImplementedException();
-        }
     }
 }

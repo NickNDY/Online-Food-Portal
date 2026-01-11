@@ -85,6 +85,55 @@ namespace Online_Food_Portal.Services
         }
 
         /// <summary>
+        /// Adds a modification to an item in an order
+        /// </summary>
+        /// <param name="order_items_id">The ID of the order item to add the modification to</param>
+        /// <param name="modifications_id">The ID of the modification to add to the item</param>
+        /// <returns>The number of affected rows. 1 = success, 0 = failure</returns>
+        public int AddOrderModification(int order_items_id, int modifications_id)
+        {
+            string sqlStatement =
+                $"INSERT INTO order_modifications (order_items_id, modifications_id) VALUES (@order_items_id, @modifications_id)";
+
+            int affectedRows = 0;
+
+            try
+            {
+                using (MySqlConnection connection = new MySqlConnection(connectionString))
+                {
+                    connection.Open();
+
+                    try
+                    {
+                        System.Diagnostics.Debug.WriteLine("Connection to MySQL successful, creating modification");
+
+                        MySqlCommand command = new MySqlCommand(sqlStatement, connection);
+
+                        command.Parameters.Add(new MySqlParameter("@order_items_id", MySqlDbType.Int32)).Value = order_items_id;
+                        command.Parameters.Add(new MySqlParameter("@modifications_id", MySqlDbType.Int32)).Value = modifications_id;
+
+                        affectedRows = command.ExecuteNonQuery();
+
+                        System.Diagnostics.Debug.WriteLine($"Created order item modification: {(affectedRows == 1 ? "True" : "False")}");
+
+                        connection.Close();
+                        System.Diagnostics.Debug.WriteLine("Connection to MySQL closed");
+                    }
+                    catch (MySqlException ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"MySQL Error: {ex.SqlState}: {ex.ErrorCode}: {ex.Message}");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Failed to connect to SQL Database: {ex.Message}");
+            }
+
+            return affectedRows;
+        }
+
+        /// <summary>
         /// Gets all modifications
         /// </summary>
         /// <returns>A list of all modifications</returns>
@@ -308,55 +357,6 @@ namespace Online_Food_Portal.Services
 
                     connection.Close();
                     System.Diagnostics.Debug.WriteLine("Connection to MySQL closed");
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Failed to connect to SQL Database: {ex.Message}");
-            }
-
-            return affectedRows;
-        }
-
-        /// <summary>
-        /// Adds a modification to an item in an order
-        /// </summary>
-        /// <param name="order_items_id">The ID of the order item to add the modification to</param>
-        /// <param name="modifications_id">The ID of the modification to add to the item</param>
-        /// <returns>The number of affected rows. 1 = success, 0 = failure</returns>
-        public int AddOrderModification(int order_items_id, int modifications_id)
-        {
-            string sqlStatement =
-                $"INSERT INTO order_modifications (order_items_id, modifications_id) VALUES (@order_items_id, @modifications_id)";
-
-            int affectedRows = 0;
-
-            try
-            {
-                using (MySqlConnection connection = new MySqlConnection(connectionString))
-                {
-                    connection.Open();
-
-                    try
-                    {
-                        System.Diagnostics.Debug.WriteLine("Connection to MySQL successful, creating modification");
-
-                        MySqlCommand command = new MySqlCommand(sqlStatement, connection);
-
-                        command.Parameters.Add(new MySqlParameter("@order_items_id", MySqlDbType.Int32)).Value = order_items_id;
-                        command.Parameters.Add(new MySqlParameter("@modifications_id", MySqlDbType.Int32)).Value = modifications_id;
-
-                        affectedRows = command.ExecuteNonQuery();
-
-                        System.Diagnostics.Debug.WriteLine($"Created order item modification: {(affectedRows == 1 ? "True" : "False")}");
-
-                        connection.Close();
-                        System.Diagnostics.Debug.WriteLine("Connection to MySQL closed");
-                    }
-                    catch (MySqlException ex)
-                    {
-                        System.Diagnostics.Debug.WriteLine($"MySQL Error: {ex.SqlState}: {ex.ErrorCode}: {ex.Message}");
-                    }
                 }
             }
             catch (Exception ex)

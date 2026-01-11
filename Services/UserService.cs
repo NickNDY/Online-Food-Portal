@@ -63,7 +63,12 @@ namespace Online_Food_Portal.Services
 
             return affectedRows;
         }
-
+        
+        /// <summary>
+        /// Deletes a user by ID
+        /// </summary>
+        /// <param name="id">The Id of the user to delete</param>
+        /// <returns>The number of rows affected. 1 = success, 0 = failure</returns>
         public int DeleteUserById(int id)
         {
             string sqlStatement = $"DELETE FROM users WHERE id = {id}";
@@ -107,7 +112,6 @@ namespace Online_Food_Portal.Services
 
             return affectedRows;
         }
-
 
         /// <summary>
         /// Attempts to find a user by username

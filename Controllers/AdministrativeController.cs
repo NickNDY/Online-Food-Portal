@@ -12,11 +12,11 @@ namespace Online_Food_Portal.Controllers
     [Route("Administrative")]
     [Authorize(Roles = "Administrator")]
     [ApiController]
-    public class AdministrativeController : Controller
+    public class AdministrativeController(IItemService itemService, IStoreSettingsService storeSettingsService, IModificationService modificationService) : Controller
     {
-        private readonly IItemService itemService;
-        private readonly IModificationService modificationService;
-        private readonly IStoreSettingsService storeSettingsService;
+        private readonly IItemService itemService = itemService;
+        private readonly IModificationService modificationService = modificationService;
+        private readonly IStoreSettingsService storeSettingsService = storeSettingsService;
 
         public class ItemCreationModel
         {
@@ -126,13 +126,6 @@ namespace Online_Food_Portal.Controllers
                 defaultModification = true;
                 hidden = false;
             }
-        }
-
-        public AdministrativeController(IItemService itemService, IStoreSettingsService storeSettingsService, IModificationService modificationService)
-        {
-            this.itemService = itemService;
-            this.storeSettingsService = storeSettingsService;
-            this.modificationService = modificationService;
         }
 
         /// <summary>
